@@ -1,0 +1,26 @@
+{
+    "name" : "Junglee",
+    "id" : 560964,
+    "languages" : [
+        "en"
+    ],
+    "original_language" : "hi",
+    "release_date" : "2019-03-29",
+    "runtime": 115,
+    "poster" : "4Jwof1qQ6U99TZFkBCngBdfW8J2.jpg",
+    "genres": [
+        {
+            "id": 28,
+            "name": "Action"
+        },
+        {
+            "id": 12,
+            "name": "Adventure"
+        }
+    ],
+    "imdb_id" : "tt7463730",
+    "streaming_partner": "https://www.netflix.com/title/80057918",
+    "popularity": 99.698,
+    "vote_average": 6.6,
+    "vote_count": 73
+}
