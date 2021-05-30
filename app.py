@@ -1,5 +1,4 @@
-from flask import Flask, jsonify, request, Response
-from config import TestingConfig as APP_SETTINGS
+from flask import Flask, jsonify, request, Response, redirect
 from flask_pymongo import pymongo
 import requests
 import secrets
@@ -7,6 +6,10 @@ import json
 import re
 import os
 from iso_language_codes import language, language_name, language_autonym
+from config import TestingConfig as APP_SETTINGS
+from config import ErrorStringManagement
+from config import SuccessStringManagement
+from exception_handler import *
 
 app = Flask(__name__)
 app.secret_key = APP_SETTINGS.SECRET_KEY
@@ -18,24 +21,6 @@ tv_collections = db[APP_SETTINGS.TV_COLLECTION_NAME]
 movie_collections = db[APP_SETTINGS.MOVIE_COLLECTION_NAME]
 users_collections = db[APP_SETTINGS.USER_COLLECTION_NAME]
 users_data_collections = db[APP_SETTINGS.USER_DATA_COLLECTION_NAME]
-
-@app.route('/', methods=['GET'])
-def index():
-    try:
-        api_key = request.args.get('api')
-        api_check = users_collections.count_documents({"API" : api_key})
-
-        if api_check != 0:
-            tv_coll_data = tv_collections.find({}, {'_id': False})
-            # Convert Data into List
-            tv_coll_fetch_data = []
-            for data in tv_coll_data:
-                tv_coll_fetch_data.append(data)
-            return Response(json.dumps(tv_coll_fetch_data), status=200, mimetype='application/json')
-        else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
-    except Exception as e:
-        return Response("Internal Server Error", status=500, mimetype='application/json')
 
 
 # TV Show Routes
@@ -50,14 +35,16 @@ def tv_tv_id_func(tv_id):
                 tv_coll_data = tv_collections.find({"id" : tv_id}, {'_id': False})[0]
                 return Response(json.dumps(tv_coll_data), status=200, mimetype='application/json')
             else:
-                return Response("Unauthorized", status=401, mimetype='application/json')
+                raise INVALID_API_401_EXCEPTION
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except IndexError:
-        return Response("Movie Not Found", status=404, mimetype='application/json')
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
     except Exception as e:
-        print(e)
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/search', methods=['GET'])
@@ -77,13 +64,19 @@ def tv_search_func():
                         tv_coll_fetch_data.append(data)
                     return Response(json.dumps(tv_coll_fetch_data), status=200, mimetype='application/json')
                 else:
-                    return Response("Unauthorized", status=401, mimetype='application/json')
+                    raise INVALID_API_401_EXCEPTION
             else:
-                return Response("No Movie Name Passed", status=401, mimetype='application/json')
+                raise NOT_FOUND_404_EXCEPTION
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+    except NOT_FOUND_404_EXCEPTION as e:
+        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
     except Exception as e:
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/add/<int:tv_id>', methods=['GET'])
@@ -91,6 +84,7 @@ def tv_add_func(tv_id):
     try:
         if "api" in request.args:
             if "language" in request.args and "season" in request.args and "episode" in request.args:
+                # check that language is valid
                 l_name = language_name(request.args.get('language'))
                 api_key = request.args.get('api')
                 watched_language = request.args.get('language')
@@ -117,36 +111,44 @@ def tv_add_func(tv_id):
                                         print("Adding...")
                                         users_data_collections.update_one({"user_id" : user_id}, {"$push" : {"tv" : { "$each" : [{"tv_id" : tv_id, "watched_language" : watched_language, "current_season" : current_season, "current_episode" : current_episode}]}}})
                                         print("New added")
-                                        return Response(json.dumps("{'status' : 200, 'message' : 'Data Added Successfully'}"), status=200, mimetype='application/json')
+                                        return Response(json.dumps(SuccessStringManagement.ADDED_TO_WATCHED_LIST), status=200, mimetype='application/json')
                                     else:
                                         # edit
                                         print("Editing...")
                                         users_data_collections.update_one({"user_id" : user_id, "tv.tv_id" : tv_id}, {"$set" : {"tv.$.watched_language" : watched_language, "tv.$.current_season" : current_season, "tv.$.current_episode" : current_episode}})
                                         print("Edit Done")
-                                        return Response(json.dumps("{'status' : 200, 'message' : 'Data Edited Successfully'}"), status=200, mimetype='application/json')
+                                        return Response(json.dumps(SuccessStringManagement.EDITED_TO_WATCHED_LIST), status=200, mimetype='application/json')
                                 else:
-                                    return Response("episode vadhi na gaya?", status=401, mimetype='application/json')
+                                    raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_EPISODE_404)
                             else:
-                                return Response("etli badhi season chhe j nai", status=401, mimetype='application/json')
+                                raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_SEASON_404)
                         else:
-                            print("nathi")
+                            raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_LANGUAGE_404)
                     else:
-                        return Response("TV Show Not Available", status=401, mimetype='application/json')
+                        raise NOT_FOUND_404_EXCEPTION
                 else:
-                    return Response("Unauthorized", status=401, mimetype='application/json')
+                    raise INVALID_API_401_EXCEPTION
             else:
-                return Response("Data not Given", status=401, mimetype='application/json')
+                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_INCORRECT)
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
-    except AssertionError:
-        return Response("This is not valid language code", status=500, mimetype='application/json')
-    except KeyError:
-        return Response("This language is not avialable", status=500, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except NOT_FOUND_404_EXCEPTION as e:
+        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
+    except BAD_REQUEST_400_EXCEPTION as e:
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+    except (AssertionError, KeyError):
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_LANGUAGE_INVALID_400
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
     except ValueError:
-        return Response("Season & episode name are not correct", status=500, mimetype='application/json')
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_INCORRECT
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
     except Exception as e:
-        print(e)
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/remove/<int:tv_id>', methods=['GET'])
 def tv_removewatched(tv_id):
@@ -164,16 +166,21 @@ def tv_removewatched(tv_id):
                     print("Removing...")
                     users_data_collections.update_one({"user_id" : user_id}, {"$pull" : {"tv" : {"tv_id" : tv_id}}})
                     print("Removed")
-                    return Response(json.dumps("{'status' : 200, 'message' : 'TV Show Removed Successfully'}"), status=200, mimetype='application/json')
+                    return Response(json.dumps(SuccessStringManagement.REMOVED_FROM_WATCHED_LIST), status=200, mimetype='application/json')
                 else:
-                    return Response("You haven't watch this movie", status=401, mimetype='application/json')
+                    raise NOT_FOUND_404_EXCEPTION
             else:
-                return Response("Unauthorized", status=401, mimetype='application/json')
+                raise INVALID_API_401_EXCEPTION
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except NOT_FOUND_404_EXCEPTION as e:
+        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except Exception as e:
-        print(e)
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
     
 
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/watch/', methods=['GET'])
@@ -200,16 +207,16 @@ def tv_watched():
 
                     return Response(json.dumps(watched_tv_data), status=200, mimetype='application/json')
                 else:
-                    return Response("No TV show you have watched yet", status=200, mimetype='application/json')
+                    return Response(json.dumps([]), status=200, mimetype='application/json')
             else:
-                return Response("Unauthorized", status=401, mimetype='application/json')
+                raise INVALID_API_401_EXCEPTION
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except Exception as e:
-        return Response("Internal Server Error", status=500, mimetype='application/json')
-
-
-
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 
@@ -227,11 +234,15 @@ def movie_id_func(movie_id):
             # Convert Data into List
             return Response(json.dumps(movie_coll_data), status=200, mimetype='application/json')
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except IndexError:
-        return Response("Movie not available", status=500, mimetype='application/json')
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
     except Exception as e:
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 @app.route(f'/{APP_SETTINGS.VERSION}/movie/search', methods=['GET'])
@@ -252,15 +263,25 @@ def movie_search_name():
                             movie_coll_fetch_data.append(data)
                         return Response(json.dumps(movie_coll_fetch_data), status=200, mimetype='application/json')
                     else:
-                        return Response("Unauthorized", status=401, mimetype='application/json')
+                        raise INVALID_API_401_EXCEPTION
                 else:
-                    return Response("No name Provided", status=401, mimetype='application/json')
+                    raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_INCORRECT)
             else:
-                return Response("No Movie Name Given", status=401, mimetype='application/json')
+                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_INCORRECT)
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+
+    except NOT_FOUND_404_EXCEPTION as e:
+        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
+    except BAD_REQUEST_400_EXCEPTION as e:
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except Exception as e:
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 @app.route(f'/{APP_SETTINGS.VERSION}/movie/add/<int:movie_id>', methods=['GET'])
@@ -287,30 +308,37 @@ def movie_addwatched(movie_id):
                                 print("Adding...")
                                 users_data_collections.update_one({"user_id" : user_id}, {"$push" : {"movie" : { "$each" : [{"movie_id" : movie_id, "watched_language" : watched_language}]}}})
                                 print("New added")
-                                return Response(json.dumps("{'status' : 200, 'message' : 'Data Added Successfully'}"), status=200, mimetype='application/json')
+                                return Response(json.dumps(SuccessStringManagement.ADDED_TO_WATCHED_LIST), status=200, mimetype='application/json')
                             else:
                                 # edit
                                 print("Editing...")
                                 users_data_collections.update_one({"user_id" : user_id, "movie.movie_id" : movie_id}, {"$set" : {"movie.$.watched_language" : watched_language}})
                                 print("Edit Done")
-                                return Response(json.dumps("{'status' : 200, 'message' : 'Data Edited Successfully'}"), status=200, mimetype='application/json')
+                                return Response(json.dumps(SuccessStringManagement.EDITED_TO_WATCHED_LIST), status=200, mimetype='application/json')
                         else:    
-                            return Response("Language is not available for this movie", status=401, mimetype='application/json')
+                            raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_IS_NOT_AVAILABLE_400)
                     else:
-                        return Response("Movie Not Available", status=401, mimetype='application/json')
+                        raise NOT_FOUND_404_EXCEPTION 
                 else:
-                    return Response("Unauthorized", status=401, mimetype='application/json')
+                    raise INVALID_API_401_EXCEPTION
             else:
-                return Response("Watched Language not provided", status=401, mimetype='application/json')
+                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_NOT_PROVIDED_400)
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
-    except AssertionError:
-        return Response("language code 2 chracter no hoy", status=500, mimetype='application/json')
-    except KeyError:
-        return Response("Key Error language chhe nai avi kai", status=500, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except NOT_FOUND_404_EXCEPTION as e:
+        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
+    except BAD_REQUEST_400_EXCEPTION as e:
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+    except (AssertionError, KeyError):
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_LANGUAGE_INVALID_400
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
     except Exception as e:
-        print(e)
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 @app.route(f'/{APP_SETTINGS.VERSION}/movie/remove/<int:movie_id>', methods=['GET'])
@@ -331,19 +359,27 @@ def movie_removewatched(movie_id):
                         print("Removing...")
                         users_data_collections.update_one({"user_id" : user_id}, {"$pull" : {"movie" : {"movie_id" : movie_id}}})
                         print("Removed")
-                        return Response(json.dumps("{'status' : 200, 'message' : 'Movie Removed Successfully'}"), status=200, mimetype='application/json')
+                        return Response(json.dumps(SuccessStringManagement.REMOVED_FROM_WATCHED_LIST), status=200, mimetype='application/json')
                     else:
                         # User haven't watch movie
-                        return Response("You haven't watch this movie", status=401, mimetype='application/json')
+                        raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_MOVIE_NOT_WATCHED_400)
                 else:
-                    return Response("Movie Not Available", status=401, mimetype='application/json')
+                    raise NOT_FOUND_404_EXCEPTION
             else:
-                return Response("Unauthorized", status=401, mimetype='application/json')
+                raise INVALID_API_401_EXCEPTION
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+    except NOT_FOUND_404_EXCEPTION as e:
+        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
+    except BAD_REQUEST_400_EXCEPTION as e:
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
+        return Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except Exception as e:
-        print(e)
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 @app.route(f'/{APP_SETTINGS.VERSION}/movie/watch/', methods=['GET'])
@@ -368,13 +404,17 @@ def movie_watched():
 
                     return Response(json.dumps(watched_movie_data), status=200, mimetype='application/json')
                 else:
-                    return Response("No Movie you have watched yet", status=200, mimetype='application/json')
+                    return Response(json.dumps([]), status=200, mimetype='application/json')
             else:
-                return Response("Unauthorized", status=401, mimetype='application/json')
+                raise INVALID_API_401_EXCEPTION
         else:
-            return Response("Unauthorized", status=401, mimetype='application/json')
+            raise INVALID_API_401_EXCEPTION
+
+    except INVALID_API_401_EXCEPTION:
+        return Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
     except Exception as e:
-        return Response("Internal Server Error", status=500, mimetype='application/json')
+        # print(e)
+        return Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
 
 
 
@@ -487,6 +527,17 @@ def generate_api():
 
 
 
+
+
+# Docs route
+@app.route(f'/{APP_SETTINGS.VERSION}', methods=['GET'])
+def redirect_docs():
+    return redirect(f"{APP_SETTINGS.VERSION}/docs", code=302)
+
+
+@app.route(f'/{APP_SETTINGS.VERSION}/docs', methods=['GET'])
+def docs():
+    return redirect(APP_SETTINGS.DOCUMENTATION_LINK, code=302)
 
 
 
