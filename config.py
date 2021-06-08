@@ -17,7 +17,8 @@ class ProductionConfig(Config):
     SUPER_USER = "Superuser Auth Token"
     ADMIN_USER = "Admin Auth Token"
     WORKER_USER = "Worker Auth Token"
-    VERSION = "v1"
+    VERSION = "v2-beta"
+    PAGING = 20
 
 class TestingConfig(Config):
     DEBUG = True
@@ -34,7 +35,8 @@ class TestingConfig(Config):
     SUPER_USER = "Superuser Auth Token"
     ADMIN_USER = "Admin Auth Token"
     WORKER_USER = "Worker Auth Token"
-    VERSION = "v1"
+    VERSION = "v2-beta"
+    PAGING = 20
 
 class ErrorStringManagement():
     INVALID_API_401 = {"success": False, "status_message": "Invalid API Key: You must be granted a valid key."}

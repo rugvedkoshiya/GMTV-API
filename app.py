@@ -23,6 +23,9 @@ users_collections = db[APP_SETTINGS.USER_COLLECTION_NAME]
 users_data_collections = db[APP_SETTINGS.USER_DATA_COLLECTION_NAME]
 
 
+
+
+
 # TV Show Routes
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/<int:tv_id>', methods=['GET'])
 def tv_tv_id_func(tv_id):
@@ -63,7 +66,15 @@ def tv_search_func():
                 
                 if api_check != 0:
                     tv_name = request.args.get('query')
-                    tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {'_id': False})
+                    if "page" in request.args:
+                        page = int(request.args.get('page'))
+                        if page > 0:
+                            tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {"_id" : False}).skip(0 if page == 1 else page*APP_SETTINGS.PAGING - APP_SETTINGS.PAGING).limit(APP_SETTINGS.PAGING)
+                        else:
+                            raise ValueError
+                    else:
+                        tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {"_id" : False}).skip(0).limit(APP_SETTINGS.PAGING)
+
                     # Convert Data into List
                     tv_coll_fetch_data = []
                     for data in tv_coll_data:
@@ -74,16 +85,19 @@ def tv_search_func():
                 else:
                     raise INVALID_API_401_EXCEPTION
             else:
-                raise NOT_FOUND_404_EXCEPTION
+                raise BAD_REQUEST_400_EXCEPTION
         else:
             raise INVALID_API_401_EXCEPTION
     except INVALID_API_401_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except NOT_FOUND_404_EXCEPTION as e:
-        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
-        response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
+    except BAD_REQUEST_400_EXCEPTION as e:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except Exception as e:
@@ -180,6 +194,7 @@ def tv_add_func(tv_id):
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
+
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/remove/<int:tv_id>', methods=['GET'])
 def tv_removewatched(tv_id):
     try:
@@ -221,7 +236,7 @@ def tv_removewatched(tv_id):
         return response
     
 
-@app.route(f'/{APP_SETTINGS.VERSION}/tv/watch/', methods=['GET'])
+@app.route(f'/{APP_SETTINGS.VERSION}/tv/watch', methods=['GET'])
 def tv_watched():
     try:
         if "api" in request.args:
@@ -233,15 +248,34 @@ def tv_watched():
                 tv_show_watched_count = users_data_collections.count_documents({"user_id" : user_id, "tv" : {"$exists" : True, "$not" : {"$size" : 0}}})
                 if tv_show_watched_count != 0:
                     tv_show_watched = users_data_collections.find({"user_id" : user_id, "tv" : {"$exists" : True, "$not" : {"$size" : 0}}})[0]['tv']
+                    
                     watched_tv_data = []
-                    for tvshow in tv_show_watched:
-                        tv_coll_data = tv_collections.find({"id" : tvshow['tv_id']}, {'_id': False})
-                        # Convert Data into List
-                        for data in tv_coll_data:
-                            data['watched_language'] = tvshow['watched_language']
-                            data['current_season'] = tvshow['current_season']
-                            data['current_episode'] = tvshow['current_episode']
-                            watched_tv_data.append(data)
+                    if "page" in request.args:
+                        page = int(request.args.get('page'))
+                        if page > 0:
+                            for i in range(0 if page == 1 else APP_SETTINGS.PAGING*(page-1), APP_SETTINGS.PAGING if page == 1 else APP_SETTINGS.PAGING*page):
+                                if i < len(tv_show_watched):
+                                    tv_coll_data = tv_collections.find({"id" : tv_show_watched[i]['tv_id']}, {'_id': False})
+                                    for data in tv_coll_data:
+                                        data['watched_language'] = tv_show_watched[i]['watched_language']
+                                        data['current_season'] = tv_show_watched[i]['current_season']
+                                        data['current_episode'] = tv_show_watched[i]['current_episode']
+                                        watched_tv_data.append(data)
+                                else:
+                                    break
+                        else:
+                            raise ValueError
+                    else:
+                        for i in range(0, APP_SETTINGS.PAGING):
+                            if i < len(tv_show_watched):
+                                tv_coll_data = tv_collections.find({"id" : tv_show_watched[i]['tv_id']}, {'_id': False})
+                                for data in tv_coll_data:
+                                    data['watched_language'] = tv_show_watched[i]['watched_language']
+                                    data['current_season'] = tv_show_watched[i]['current_season']
+                                    data['current_episode'] = tv_show_watched[i]['current_episode']
+                                    watched_tv_data.append(data)
+                            else:
+                                break
 
                     response = Response(json.dumps(watched_tv_data), status=200, mimetype='application/json')
                     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -256,6 +290,10 @@ def tv_watched():
             raise INVALID_API_401_EXCEPTION
     except INVALID_API_401_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except Exception as e:
@@ -310,7 +348,12 @@ def movie_search_name():
                     
                     if api_check != 0:
                         movie_name = request.args.get('query')
-                        movie_coll_data = movie_collections.find({"name" : re.compile(movie_name, re.IGNORECASE)}, {'_id': False})
+                        if "page" in request.args:
+                            page = int(request.args.get('page'))
+                            movie_coll_data = movie_collections.find({"name" : re.compile(movie_name, re.IGNORECASE)}, {'_id': False}).skip(0 if page == 1 else page*APP_SETTINGS.PAGING - APP_SETTINGS.PAGING).limit(APP_SETTINGS.PAGING)
+                        else:
+                            movie_coll_data = movie_collections.find({"name" : re.compile(movie_name, re.IGNORECASE)}, {'_id': False}).skip(0).limit(APP_SETTINGS.PAGING)
+
                         # Convert Data into List
                         movie_coll_fetch_data = []
                         for data in movie_coll_data:
@@ -339,6 +382,10 @@ def movie_search_name():
         return response
     except INVALID_API_401_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except Exception as e:
@@ -471,7 +518,7 @@ def movie_removewatched(movie_id):
         return response
 
 
-@app.route(f'/{APP_SETTINGS.VERSION}/movie/watch/', methods=['GET'])
+@app.route(f'/{APP_SETTINGS.VERSION}/movie/watch', methods=['GET'])
 def movie_watched():
     try:
         if "api" in request.args:
@@ -483,13 +530,30 @@ def movie_watched():
                 movie_watched_count = users_data_collections.count_documents({"user_id" : user_id, "movie" : {"$exists" : True, "$not" : {"$size" : 0}}})
                 if movie_watched_count != 0:
                     movie_watched = users_data_collections.find({"user_id" : user_id, "movie" : {"$exists" : True, "$not" : {"$size" : 0}}})[0]['movie']
+
                     watched_movie_data = []
-                    for movie in movie_watched:
-                        movie_coll_data = movie_collections.find({"id" : movie['movie_id']}, {'_id': False})
-                        # Convert Data into List
-                        for data in movie_coll_data:
-                            data['watched_language'] = movie['watched_language']
-                            watched_movie_data.append(data)
+                    if "page" in request.args:
+                        page = int(request.args.get('page'))
+                        if page > 0:
+                            for i in range(0 if page == 1 else APP_SETTINGS.PAGING*(page-1), APP_SETTINGS.PAGING if page == 1 else APP_SETTINGS.PAGING*page):
+                                if i < len(movie_watched):
+                                    movie_coll_data = movie_collections.find({"id" : movie_watched[i]['movie_id']}, {'_id': False})
+                                    for data in movie_coll_data:
+                                        data['watched_language'] = movie_watched[i]['watched_language']
+                                        watched_movie_data.append(data)
+                                else:
+                                    break
+                        else:
+                            raise ValueError
+                    else:
+                        for i in range(0, APP_SETTINGS.PAGING):
+                            if i < len(movie_watched):
+                                movie_coll_data = movie_collections.find({"id" : movie_watched[i]['movie_id']}, {'_id': False})
+                                for data in movie_coll_data:
+                                    data['watched_language'] = movie_watched[i]['watched_language']
+                                    watched_movie_data.append(data)
+                            else:
+                                break
 
                     response = Response(json.dumps(watched_movie_data), status=200, mimetype='application/json')
                     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -507,11 +571,16 @@ def movie_watched():
         response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     except Exception as e:
         # print(e)
         response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
+
 
 
 
@@ -650,6 +719,8 @@ def docs():
 
 
 
+
+
 # Error handlers
 @app.errorhandler(400) 
 def error400(e): 
@@ -668,6 +739,9 @@ def error500(e):
     response = Response(json.dumps({'status' : '500 Internal Server Error'}), status=500, mimetype='application/json')
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+
+
 
 
 # Run app
