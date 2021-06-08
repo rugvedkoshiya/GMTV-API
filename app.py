@@ -61,29 +61,32 @@ def tv_search_func():
     try:
         if "api" in request.args:
             if "query" in request.args:
-                api_key = request.args.get('api')
-                api_check = users_collections.count_documents({"API" : api_key})
-                
-                if api_check != 0:
-                    tv_name = request.args.get('query')
-                    if "page" in request.args:
-                        page = int(request.args.get('page'))
-                        if page > 0:
-                            tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {"_id" : False}).skip(0 if page == 1 else page*APP_SETTINGS.PAGING - APP_SETTINGS.PAGING).limit(APP_SETTINGS.PAGING)
+                if request.args.get("query") != "":
+                    api_key = request.args.get('api')
+                    api_check = users_collections.count_documents({"API" : api_key})
+                    
+                    if api_check != 0:
+                        tv_name = request.args.get('query')
+                        if "page" in request.args:
+                            page = int(request.args.get('page'))
+                            if page > 0:
+                                tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {"_id" : False}).skip(0 if page == 1 else page*APP_SETTINGS.PAGING - APP_SETTINGS.PAGING).limit(APP_SETTINGS.PAGING)
+                            else:
+                                raise ValueError
                         else:
-                            raise ValueError
-                    else:
-                        tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {"_id" : False}).skip(0).limit(APP_SETTINGS.PAGING)
+                            tv_coll_data = tv_collections.find({"name" : re.compile(tv_name, re.IGNORECASE)}, {"_id" : False}).skip(0).limit(APP_SETTINGS.PAGING)
 
-                    # Convert Data into List
-                    tv_coll_fetch_data = []
-                    for data in tv_coll_data:
-                        tv_coll_fetch_data.append(data)
-                    response = Response(json.dumps(tv_coll_fetch_data), status=200, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
+                        # Convert Data into List
+                        tv_coll_fetch_data = []
+                        for data in tv_coll_data:
+                            tv_coll_fetch_data.append(data)
+                        response = Response(json.dumps(tv_coll_fetch_data), status=200, mimetype='application/json')
+                        response.headers['Access-Control-Allow-Origin'] = '*'
+                        return response
+                    else:
+                        raise INVALID_API_401_EXCEPTION
                 else:
-                    raise INVALID_API_401_EXCEPTION
+                    raise BAD_REQUEST_400_EXCEPTION
             else:
                 raise BAD_REQUEST_400_EXCEPTION
         else:
@@ -92,7 +95,7 @@ def tv_search_func():
         response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except BAD_REQUEST_400_EXCEPTION as e:
+    except BAD_REQUEST_400_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
@@ -161,7 +164,7 @@ def tv_add_func(tv_id):
                 else:
                     raise INVALID_API_401_EXCEPTION
             else:
-                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_INCORRECT)
+                raise BAD_REQUEST_400_EXCEPTION
         else:
             raise INVALID_API_401_EXCEPTION
     except NOT_FOUND_404_EXCEPTION as e:
@@ -169,8 +172,7 @@ def tv_add_func(tv_id):
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except BAD_REQUEST_400_EXCEPTION as e:
-        ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
+    except BAD_REQUEST_400_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
@@ -184,7 +186,6 @@ def tv_add_func(tv_id):
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except ValueError:
-        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_INCORRECT
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
@@ -364,9 +365,9 @@ def movie_search_name():
                     else:
                         raise INVALID_API_401_EXCEPTION
                 else:
-                    raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_INCORRECT)
+                    raise BAD_REQUEST_400_EXCEPTION
             else:
-                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_INCORRECT)
+                raise BAD_REQUEST_400_EXCEPTION
         else:
             raise INVALID_API_401_EXCEPTION
 
@@ -375,8 +376,7 @@ def movie_search_name():
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except BAD_REQUEST_400_EXCEPTION as e:
-        ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
+    except BAD_REQUEST_400_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response

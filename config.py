@@ -50,7 +50,6 @@ class ErrorStringManagement():
     NOT_FOUND_LANGUAGE_404 = "This tv show don't have that language"
     NOT_FOUND_NOT_WATCHED_404 = "This tv show don't have that language"
 
-    BAD_REQUEST_INCORRECT = "Request is not proper"
     BAD_REQUEST_LANGUAGE_IS_NOT_AVAILABLE_400 = "Provided anguage is not available for this movie"
     BAD_REQUEST_LANGUAGE_NOT_PROVIDED_400 = "Watched language not provided"
     BAD_REQUEST_LANGUAGE_INVALID_400 = "Provieded language is invalid, use ISO 639 language code"
