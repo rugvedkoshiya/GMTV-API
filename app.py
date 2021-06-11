@@ -27,6 +27,37 @@ users_data_collections = db[APP_SETTINGS.USER_DATA_COLLECTION_NAME]
 
 
 # TV Show Routes
+@app.route(f'/{APP_SETTINGS.VERSION}/tv/popular', methods=['GET'])
+def tv_popular():
+    try:
+        if "page" in request.args:
+            page = int(request.args.get('page'))
+            if page > 0:
+                tv_coll_data = tv_collections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(0 if page == 1 else page*APP_SETTINGS.PAGING - APP_SETTINGS.PAGING).limit(APP_SETTINGS.PAGING)
+            else:
+                raise ValueError
+        else:
+            tv_coll_data = tv_collections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(0).limit(APP_SETTINGS.PAGING)
+    
+        # Convert Data into List
+        tv_coll_fetch_data = []
+        for data in tv_coll_data:
+            tv_coll_fetch_data.append(data)
+        response = Response(json.dumps(tv_coll_fetch_data), status=200, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except Exception as e:
+        # print(e)
+        response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+
 @app.route(f'/{APP_SETTINGS.VERSION}/tv/<int:tv_id>', methods=['GET'])
 def tv_tv_id_func(tv_id):
     try:
@@ -308,6 +339,37 @@ def tv_watched():
 
 
 # Movie Routes
+@app.route(f'/{APP_SETTINGS.VERSION}/movie/popular', methods=['GET'])
+def movie_popular():
+    try:
+        if "page" in request.args:
+            page = int(request.args.get('page'))
+            if page > 0:
+                movie_coll_data = movie_collections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(0 if page == 1 else page*APP_SETTINGS.PAGING - APP_SETTINGS.PAGING).limit(APP_SETTINGS.PAGING)
+            else:
+                raise ValueError
+        else:
+            movie_coll_data = movie_collections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(0).limit(APP_SETTINGS.PAGING)
+    
+        # Convert Data into List
+        movie_coll_fetch_data = []
+        for data in movie_coll_data:
+            movie_coll_fetch_data.append(data)
+        response = Response(json.dumps(movie_coll_fetch_data), status=200, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except Exception as e:
+        # print(e)
+        response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+
 @app.route(f'/{APP_SETTINGS.VERSION}/movie/<int:movie_id>', methods=['GET'])
 def movie_id_func(movie_id):
     try:
