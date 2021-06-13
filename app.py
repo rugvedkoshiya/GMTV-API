@@ -173,16 +173,16 @@ def tv_add_func(tv_id):
                                         users_data_collections.update_one({"user_id" : user_id}, {"$push" : {"tv" : { "$each" : [{"tv_id" : tv_id, "watched_language" : watched_language, "current_season" : current_season, "current_episode" : current_episode}]}}})
                                         print("New added")
                                         response = Response(json.dumps(SuccessStringManagement.ADDED_TO_WATCHED_LIST), status=200, mimetype='application/json')
-                                        response.headers['Access-Control-Allow-Origin'] = '*'
-                                        return response
                                     else:
                                         # edit
                                         print("Editing...")
                                         users_data_collections.update_one({"user_id" : user_id, "tv.tv_id" : tv_id}, {"$set" : {"tv.$.watched_language" : watched_language, "tv.$.current_season" : current_season, "tv.$.current_episode" : current_episode}})
                                         print("Edit Done")
                                         response = Response(json.dumps(SuccessStringManagement.EDITED_TO_WATCHED_LIST), status=200, mimetype='application/json')
-                                        response.headers['Access-Control-Allow-Origin'] = '*'
-                                        return response
+                                    
+                                    # Send response
+                                    response.headers['Access-Control-Allow-Origin'] = '*'
+                                    return response
                                 else:
                                     raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_EPISODE_404["status_message"])
                             else:
@@ -304,12 +304,12 @@ def tv_watched():
                                 break
 
                     response = Response(json.dumps(watched_tv_data), status=200, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
                 else:
                     response = Response(json.dumps([]), status=200, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
+
+                # Send response
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
             else:
                 raise INVALID_API_401_EXCEPTION
         else:
@@ -472,16 +472,16 @@ def movie_addwatched(movie_id):
                                 users_data_collections.update_one({"user_id" : user_id}, {"$push" : {"movie" : { "$each" : [{"movie_id" : movie_id, "watched_language" : watched_language}]}}})
                                 print("New added")
                                 response = Response(json.dumps(SuccessStringManagement.ADDED_TO_WATCHED_LIST), status=200, mimetype='application/json')
-                                response.headers['Access-Control-Allow-Origin'] = '*'
-                                return response
                             else:
                                 # edit
                                 print("Editing...")
                                 users_data_collections.update_one({"user_id" : user_id, "movie.movie_id" : movie_id}, {"$set" : {"movie.$.watched_language" : watched_language}})
                                 print("Edit Done")
                                 response = Response(json.dumps(SuccessStringManagement.EDITED_TO_WATCHED_LIST), status=200, mimetype='application/json')
-                                response.headers['Access-Control-Allow-Origin'] = '*'
-                                return response
+                            
+                            # Send response
+                            response.headers['Access-Control-Allow-Origin'] = '*'
+                            return response
                                 
                         else:    
                             raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_IS_NOT_AVAILABLE_400["status_message"])
@@ -606,12 +606,12 @@ def movie_watched():
                                 break
 
                     response = Response(json.dumps(watched_movie_data), status=200, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
                 else:
                     response = Response(json.dumps([]), status=200, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
+                
+                # Send response
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
             else:
                 raise INVALID_API_401_EXCEPTION
         else:
@@ -697,16 +697,14 @@ def generate_api():
                 }
                 users_data_collections.insert_one(user_data)
                 response = Response(json.dumps({'success' : True, 'api' : generated_api}), status=201, mimetype='application/json')
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                return response
             else:
                 response = Response(json.dumps(AuthStringManagement.USER_EXISTS_409), status=409, mimetype='application/json')
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                return response
         else:
             response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
+
+        # Send response
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
     except Exception as e:
         response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -722,20 +720,16 @@ def login_func():
                 user_api = users_collections.find({"Email" : request.form['email'].lower()}, {'_id' : False})[0]
                 if sha256_crypt.verify(request.form["password"], user_api["Password"]):
                     response = Response(json.dumps({'success' : True, 'data' : {'email' : user_api['Email'], 'api' : user_api['API']}}), status=200, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
                 else:
                     response = Response(json.dumps(AuthStringManagement.WRONG_PASSWORD_401), status=401, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
             else:
                 response = Response(json.dumps(AuthStringManagement.USER_NOT_FOUND_404), status=404, mimetype='application/json')
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                return response
         else:
             response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
+        
+        # Send response
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
     except Exception as e:
         response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
@@ -770,12 +764,12 @@ def signup_func():
                             "Superuser" : 0
                         }
                     if APP_SETTINGS.DEBUG == False:
-                            response = requests.get(f"{APP_SETTINGS.IP_LOOKUP_WEBSITE}{request.environ['HTTP_X_FORWARDED_FOR']}").json()
-                            if response['status'] == "success":
+                            ip_response = requests.get(f"{APP_SETTINGS.IP_LOOKUP_WEBSITE}{request.environ['HTTP_X_FORWARDED_FOR']}").json()
+                            if ip_response['status'] == "success":
                                 new_user["IP"] = request.environ['HTTP_X_FORWARDED_FOR']
-                                new_user["Country"] = response['country']
-                                new_user["Region"] = response['regionName']
-                                new_user["City"] = response['city']
+                                new_user["Country"] = ip_response['country']
+                                new_user["Region"] = ip_response['regionName']
+                                new_user["City"] = ip_response['city']
 
                     if "superuser" in request.form:
                         if request.form['superuser'] == APP_SETTINGS.SUPER_USER:
@@ -798,16 +792,14 @@ def signup_func():
                     }
                     users_data_collections.insert_one(user_data)
                     response = Response(json.dumps({'success' : True, 'api' : generated_api}), status=201, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
                 else:
                     response = Response(json.dumps(AuthStringManagement.USER_EXISTS_409), status=409, mimetype='application/json')
-                    response.headers['Access-Control-Allow-Origin'] = '*'
-                    return response
             else:
                 response = Response(json.dumps(AuthStringManagement.PASSWORD_NOT_SAME_401), status=401, mimetype='application/json')
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                return response
+            
+            # Send response
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
         else:
             raise ValueError
     except ValueError:
