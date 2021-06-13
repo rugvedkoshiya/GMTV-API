@@ -1,4 +1,4 @@
-from config import ErrorStringManagement
+from string_manager import ErrorStringManagement
 
 class INVALID_API_401_EXCEPTION(Exception):
     """

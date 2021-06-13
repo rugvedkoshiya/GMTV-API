@@ -7,9 +7,12 @@ import re
 import os
 from iso_language_codes import language, language_name, language_autonym
 from config import TestingConfig as APP_SETTINGS
-from config import ErrorStringManagement
-from config import SuccessStringManagement
+from string_manager import ErrorStringManagement
+from string_manager import SuccessStringManagement
+from string_manager import AuthStringManagement
+
 from exception_handler import *
+from passlib.hash import sha256_crypt
 
 app = Flask(__name__)
 app.secret_key = APP_SETTINGS.SECRET_KEY
@@ -73,7 +76,7 @@ def tv_tv_id_func(tv_id):
         else:
             raise INVALID_API_401_EXCEPTION
     except INVALID_API_401_EXCEPTION:
-        response =  Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response =  Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except IndexError:
@@ -123,14 +126,10 @@ def tv_search_func():
         else:
             raise INVALID_API_401_EXCEPTION
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except BAD_REQUEST_400_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
-    except ValueError:
+    except (ValueError, BAD_REQUEST_400_EXCEPTION):
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
@@ -185,11 +184,11 @@ def tv_add_func(tv_id):
                                         response.headers['Access-Control-Allow-Origin'] = '*'
                                         return response
                                 else:
-                                    raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_EPISODE_404)
+                                    raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_EPISODE_404["status_message"])
                             else:
-                                raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_SEASON_404)
+                                raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_SEASON_404["status_message"])
                         else:
-                            raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_LANGUAGE_404)
+                            raise NOT_FOUND_404_EXCEPTION(ErrorStringManagement.NOT_FOUND_LANGUAGE_404["status_message"])
                     else:
                         raise NOT_FOUND_404_EXCEPTION
                 else:
@@ -199,24 +198,20 @@ def tv_add_func(tv_id):
         else:
             raise INVALID_API_401_EXCEPTION
     except NOT_FOUND_404_EXCEPTION as e:
-        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+        ErrorStringManagement.NOT_FOUND_404["status_message"] = str(e)
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except BAD_REQUEST_400_EXCEPTION:
+    except (ValueError, BAD_REQUEST_400_EXCEPTION):
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except (AssertionError, KeyError):
-        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_LANGUAGE_INVALID_400
-        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
-    except ValueError:
+        ErrorStringManagement.BAD_REQUEST_400 = ErrorStringManagement.BAD_REQUEST_LANGUAGE_INVALID_400
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
@@ -252,13 +247,12 @@ def tv_removewatched(tv_id):
                 raise INVALID_API_401_EXCEPTION
         else:
             raise INVALID_API_401_EXCEPTION
-    except NOT_FOUND_404_EXCEPTION as e:
-        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
+    except NOT_FOUND_404_EXCEPTION:
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except Exception as e:
@@ -321,7 +315,7 @@ def tv_watched():
         else:
             raise INVALID_API_401_EXCEPTION
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except ValueError:
@@ -386,7 +380,7 @@ def movie_id_func(movie_id):
             raise INVALID_API_401_EXCEPTION
 
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except IndexError:
@@ -438,16 +432,12 @@ def movie_search_name():
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
-    except BAD_REQUEST_400_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
+    except (ValueError, BAD_REQUEST_400_EXCEPTION):
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response
-    except ValueError:
-        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except Exception as e:
@@ -494,31 +484,30 @@ def movie_addwatched(movie_id):
                                 return response
                                 
                         else:    
-                            raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_IS_NOT_AVAILABLE_400)
+                            raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_IS_NOT_AVAILABLE_400["status_message"])
                     else:
                         raise NOT_FOUND_404_EXCEPTION 
                 else:
                     raise INVALID_API_401_EXCEPTION
             else:
-                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_NOT_PROVIDED_400)
+                raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_LANGUAGE_NOT_PROVIDED_400["status_message"])
         else:
             raise INVALID_API_401_EXCEPTION
     except NOT_FOUND_404_EXCEPTION as e:
-        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except BAD_REQUEST_400_EXCEPTION as e:
         ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
-        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except (AssertionError, KeyError):
-        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_LANGUAGE_INVALID_400
+        ErrorStringManagement.BAD_REQUEST_400['status_message'] = ErrorStringManagement.BAD_REQUEST_LANGUAGE_INVALID_400["status_message"]
         response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
@@ -552,7 +541,7 @@ def movie_removewatched(movie_id):
                         return response
                     else:
                         # User haven't watch movie
-                        raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_MOVIE_NOT_WATCHED_400)
+                        raise BAD_REQUEST_400_EXCEPTION(ErrorStringManagement.BAD_REQUEST_MOVIE_NOT_WATCHED_400["status_message"])
                 else:
                     raise NOT_FOUND_404_EXCEPTION
             else:
@@ -560,17 +549,16 @@ def movie_removewatched(movie_id):
         else:
             raise INVALID_API_401_EXCEPTION
     except NOT_FOUND_404_EXCEPTION as e:
-        ErrorStringManagement.NOT_FOUND_404['status_message'] = str(e)
         response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except BAD_REQUEST_400_EXCEPTION as e:
         ErrorStringManagement.BAD_REQUEST_400['status_message'] = str(e)
-        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=404, mimetype='application/json')
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except Exception as e:
@@ -630,7 +618,7 @@ def movie_watched():
             raise INVALID_API_401_EXCEPTION
 
     except INVALID_API_401_EXCEPTION:
-        response = Response(json.dumps(ErrorStringManagement.INVALID_API_401), status=401, mimetype='application/json')
+        response = Response(json.dumps(AuthStringManagement.INVALID_API_401), status=401, mimetype='application/json')
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
     except ValueError:
@@ -658,80 +646,35 @@ def api_unique(api_key):
 
 @app.route(f'/{APP_SETTINGS.VERSION}/api/generate', methods=['POST'])
 def generate_api():
-    if APP_SETTINGS.DEBUG:
-        try:
+    try:
+        if "fname" in request.form and "lname" in request.form and "mobile" in request.form and "email" in request.form:
             generated_api = api_unique(secrets.token_urlsafe(32))
-
-            new_user = {
-                "First Name" : request.form['fname'],
-                "Last Name" : request.form['lname'],
-                "Mobile" : request.form['mobile'],
-                "Email" : request.form['email'].lower(),
-                "IP" : request.remote_addr,
-                "Country" : None,
-                "Region" : None,
-                "City" : None,
-                "API" : generated_api,
-                "Worker" : 0,
-                "Admin" : 0,
-                "Superuser" : 0
-            }
-
-            if "superuser" in request.form:
-                if request.form['superuser'] == APP_SETTINGS.SUPER_USER:
-                    new_user['Admin'] = 1
-                    new_user['Superuser'] = 1
-                    new_user['Worker'] = 1
-            elif "admin" in request.form:
-                if request.form['admin'] == APP_SETTINGS.ADMIN_USER:
-                    new_user['Admin'] = 1
-                    new_user['Worker'] = 1
-            elif "worker" in request.form:
-                if request.form['worker'] == APP_SETTINGS.WORKER_USER:
-                    new_user['Worker'] = 1
-
             email_check = users_collections.count_documents({"Email" : request.form['email'].lower()})
             mobile_check = users_collections.count_documents({"Mobile" : request.form['mobile']})
 
             if email_check == 0 and mobile_check == 0:
-                user_id = users_collections.insert_one(new_user).inserted_id
-                user_data = {
-                    "user_id" : user_id,
-                    "tv" : [],
-                    "movie" : []
-                }
-                users_data_collections.insert_one(user_data)
-                response = Response(json.dumps({'status' : 'success', 'api' : generated_api}), status=201, mimetype='application/json')
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                return response
-            else:
-                response = Response("User Already Exist", status=409, mimetype='application/json')
-                response.headers['Access-Control-Allow-Origin'] = '*'
-                return response
-        except Exception as e:
-            print(e)
-            response = Response("Internal Server Error", status=500, mimetype='application/json')
-            response.headers['Access-Control-Allow-Origin'] = '*'
-            return response
-    else:
-        try:
-            response = requests.get(f"{APP_SETTINGS.IP_LOOKUP_WEBSITE}{request.environ['HTTP_X_FORWARDED_FOR']}").json()
-            if response['status'] == "success":
-                generated_api = secrets.token_urlsafe(32)
                 new_user = {
                     "First Name" : request.form['fname'],
                     "Last Name" : request.form['lname'],
                     "Mobile" : request.form['mobile'],
                     "Email" : request.form['email'].lower(),
-                    "IP" : request.environ['HTTP_X_FORWARDED_FOR'],
-                    "Country" : response['country'],
-                    "Region" : response['regionName'],
-                    "City" : response['city'],
+                    "IP" : request.remote_addr,
+                    "Country" : None,
+                    "Region" : None,
+                    "City" : None,
                     "API" : generated_api,
                     "Worker" : 0,
                     "Admin" : 0,
                     "Superuser" : 0
                 }
+
+                if APP_SETTINGS.DEBUG == False:
+                    response = requests.get(f"{APP_SETTINGS.IP_LOOKUP_WEBSITE}{request.environ['HTTP_X_FORWARDED_FOR']}").json()
+                    if response['status'] == "success":
+                        new_user["IP"] = request.environ['HTTP_X_FORWARDED_FOR']
+                        new_user["Country"] = response['country']
+                        new_user["Region"] = response['regionName']
+                        new_user["City"] = response['city']
 
                 if "superuser" in request.form:
                     if request.form['superuser'] == APP_SETTINGS.SUPER_USER:
@@ -745,25 +688,137 @@ def generate_api():
                 elif "worker" in request.form:
                     if request.form['worker'] == APP_SETTINGS.WORKER_USER:
                         new_user['Worker'] = 1
+                
+                user_id = users_collections.insert_one(new_user).inserted_id
+                user_data = {
+                    "user_id" : user_id,
+                    "tv" : [],
+                    "movie" : []
+                }
+                users_data_collections.insert_one(user_data)
+                response = Response(json.dumps({'success' : True, 'api' : generated_api}), status=201, mimetype='application/json')
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
+            else:
+                response = Response(json.dumps(AuthStringManagement.USER_EXISTS_409), status=409, mimetype='application/json')
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
+        else:
+            response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+            response.headers['Access-Control-Allow-Origin'] = '*'
+            return response
+    except Exception as e:
+        response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
-                email_check = users_collections.count_documents({"Email" : request.form['email'].lower()})
-                mobile_check = users_collections.count_documents({"Mobile" : request.form['mobile']})
 
-                if email_check == 0 and mobile_check == 0:
-                    users_collections.insert_one(new_user).inserted_id
-                    response = Response(json.dumps({'status' : 'success', 'api' : generated_api}), status=201, mimetype='application/json')
+@app.route(f'/{APP_SETTINGS.VERSION}/api/login', methods=['POST'])
+def login_func():
+    try:
+        if "email" in request.form and "password" in request.form:
+            email_check = users_collections.count_documents({"Email" : request.form['email'].lower()})
+            if email_check != 0:
+                user_api = users_collections.find({"Email" : request.form['email'].lower()}, {'_id' : False})[0]
+                if sha256_crypt.verify(request.form["password"], user_api["Password"]):
+                    response = Response(json.dumps({'success' : True, 'data' : {'email' : user_api['Email'], 'api' : user_api['API']}}), status=200, mimetype='application/json')
                     response.headers['Access-Control-Allow-Origin'] = '*'
                     return response
                 else:
-                    response = Response("User Already Exist", status=409, mimetype='application/json')
+                    response = Response(json.dumps(AuthStringManagement.WRONG_PASSWORD_401), status=401, mimetype='application/json')
                     response.headers['Access-Control-Allow-Origin'] = '*'
                     return response
             else:
-                raise Exception
-        except Exception as e:
-            response = Response("Internal Server Error", status=500, mimetype='application/json')
+                response = Response(json.dumps(AuthStringManagement.USER_NOT_FOUND_404), status=404, mimetype='application/json')
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
+        else:
+            response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
             response.headers['Access-Control-Allow-Origin'] = '*'
             return response
+
+    except Exception as e:
+        response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+
+@app.route(f'/{APP_SETTINGS.VERSION}/api/signup', methods=['POST'])
+def signup_func():
+    try:
+        if "email" in request.form and "password" in request.form and "confPassword" in request.form and "fname" in request.form and "lname" in request.form and "mobile" in request.form:
+            if request.form['password'] == request.form['confPassword']:
+                generated_api = api_unique(secrets.token_urlsafe(32))
+                int(request.form['mobile'])
+                email_check = users_collections.count_documents({"Email" : request.form['email'].lower()})
+                mobile_check = users_collections.count_documents({"Mobile" : request.form['mobile']})
+                
+                if email_check == 0 and mobile_check == 0:
+                    new_user = {
+                            "Email" : request.form['email'].lower(),
+                            "Password" : sha256_crypt.hash(request.form['password']),
+                            "First Name" : request.form['fname'],
+                            "Last Name" : request.form['lname'],
+                            "Mobile" : request.form['mobile'],
+                            "IP" : request.remote_addr,
+                            "Country" : None,
+                            "Region" : None,
+                            "City" : None,
+                            "API" : generated_api,
+                            "Worker" : 0,
+                            "Admin" : 0,
+                            "Superuser" : 0
+                        }
+                    if APP_SETTINGS.DEBUG == False:
+                            response = requests.get(f"{APP_SETTINGS.IP_LOOKUP_WEBSITE}{request.environ['HTTP_X_FORWARDED_FOR']}").json()
+                            if response['status'] == "success":
+                                new_user["IP"] = request.environ['HTTP_X_FORWARDED_FOR']
+                                new_user["Country"] = response['country']
+                                new_user["Region"] = response['regionName']
+                                new_user["City"] = response['city']
+
+                    if "superuser" in request.form:
+                        if request.form['superuser'] == APP_SETTINGS.SUPER_USER:
+                            new_user['Admin'] = 1
+                            new_user['Superuser'] = 1
+                            new_user['Worker'] = 1
+                    elif "admin" in request.form:
+                        if request.form['admin'] == APP_SETTINGS.ADMIN_USER:
+                            new_user['Admin'] = 1
+                            new_user['Worker'] = 1
+                    elif "worker" in request.form:
+                        if request.form['worker'] == APP_SETTINGS.WORKER_USER:
+                            new_user['Worker'] = 1
+
+                    user_id = users_collections.insert_one(new_user).inserted_id
+                    user_data = {
+                        "user_id" : user_id,
+                        "tv" : [],
+                        "movie" : []
+                    }
+                    users_data_collections.insert_one(user_data)
+                    response = Response(json.dumps({'success' : True, 'api' : generated_api}), status=201, mimetype='application/json')
+                    response.headers['Access-Control-Allow-Origin'] = '*'
+                    return response
+                else:
+                    response = Response(json.dumps(AuthStringManagement.USER_EXISTS_409), status=409, mimetype='application/json')
+                    response.headers['Access-Control-Allow-Origin'] = '*'
+                    return response
+            else:
+                response = Response(json.dumps(AuthStringManagement.PASSWORD_NOT_SAME_401), status=401, mimetype='application/json')
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                return response
+        else:
+            raise ValueError
+    except ValueError:
+        response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    except Exception as e:
+        # print(e)
+        response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
 
 
@@ -786,19 +841,19 @@ def docs():
 # Error handlers
 @app.errorhandler(400) 
 def error400(e): 
-    response = Response(json.dumps({'status' : '400 Error'}), status=400, mimetype='application/json')
+    response = Response(json.dumps(ErrorStringManagement.BAD_REQUEST_400), status=400, mimetype='application/json')
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 @app.errorhandler(404) 
 def error404(e): 
-    response = Response(json.dumps({'status' : '404 Not Found'}), status=404, mimetype='application/json')
+    response = Response(json.dumps(ErrorStringManagement.NOT_FOUND_404), status=404, mimetype='application/json')
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 @app.errorhandler(500) 
 def error500(e):
-    response = Response(json.dumps({'status' : '500 Internal Server Error'}), status=500, mimetype='application/json')
+    response = Response(json.dumps(ErrorStringManagement.INTERNAL_SERVER_ERROR_500), status=500, mimetype='application/json')
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
