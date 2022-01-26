@@ -31,7 +31,7 @@ def login(requestObj):
                 response.setError("Wrong password")
 
         response.setStatus(200)
-        response.setMessage("demo api")
+        response.setMessage("logged in successfully")
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
