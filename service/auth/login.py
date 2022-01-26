@@ -1,0 +1,41 @@
+from models.conn import userCollections
+from service.JsonResponse import JsonResponse
+from service.checkers.commonChecker import usernameCheckerForLogin, passwordChecker
+from models.config import Config as SETTING
+from passlib.hash import sha256_crypt
+
+from service.checkers.generater import roleGenerator
+
+
+def login(requestObj):
+    response = JsonResponse()
+
+    try:
+        data = []
+
+        usernameBool, userObj = usernameCheckerForLogin(response, requestObj.get("username"))
+        if usernameBool:
+            passwordBool, password = passwordChecker(response, requestObj.get("password"))
+        if passwordBool:
+            if sha256_crypt.verify(password, userObj.get("password")):
+                data = {
+                    "email": userObj.get("email"),
+                    "username": userObj.get("username"),
+                    "displayName": userObj.get("displayName"),
+                    "country": userObj.get("country"),
+                    "api": userObj.get("api"),
+                    "role": roleGenerator(userObj.get("role")),
+                }
+            else:
+                response.setStatus(403)
+                response.setError("Wrong password")
+
+        response.setStatus(200)
+        response.setMessage("demo api")
+        response.setData(data)
+    except Exception as e:
+        response.setStatus(500) # Internal error
+        response.setError("Error in fetching a popular tv shows => " + str(e))
+        # logConfig.logError("Error in fetching a content  => " + str(e))
+    finally:
+        return response.returnResponse()
