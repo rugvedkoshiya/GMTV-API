@@ -30,12 +30,20 @@ def after_request(res):
     except Exception as e:
         return res
 
+authorizations = {
+    'api_key' : {
+        'type' : 'apiKey',
+        'in' : 'header',
+        'name' : 'X-API-Key'
+    }
+}
 
 api = Api(
     app,
     version="1.0",
     title="GMTV",
     description="GMTV API Documentation",
+    authorizations=authorizations,
     security=["api_key"],
     prefix="/v1",
 )

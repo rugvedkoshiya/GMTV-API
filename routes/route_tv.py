@@ -1,3 +1,4 @@
+from service.getter import getApiKey
 from service.tv.addTvById import addTvById
 from service.tv.deleteTvById import deleteTvById
 from service.tv.editTvById import editTvById
@@ -53,7 +54,8 @@ class TvById(Resource):
     @api.expect(addTvModel)
     def post(self, tvId):
         requestObj = validateParameters(request.json, ["language", "season", "episode"])
-        output = addTvById(tvId, requestObj)
+        apiKey = getApiKey(request)
+        output = addTvById(apiKey, tvId, requestObj)
         return jsonify(output)
 
     @api.doc(responses={200: "OK"})

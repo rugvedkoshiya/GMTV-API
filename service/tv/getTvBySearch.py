@@ -11,8 +11,8 @@ def getTvBySearch(requestObj):
     pageSize = 20
 
     try:
-        pageBool = False
         data = []
+        pageBool = False
 
         queryBool, query = queryChecker(response, requestObj.get("query"))
         if queryBool:
@@ -26,7 +26,7 @@ def getTvBySearch(requestObj):
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
-        response.setError("Error in fetching a popular tv shows => " + str(e))
+        response.setError("Error in fetching popular tv shows by search => Contact Mr. Grey" + str(e))
         # logConfig.logError("Error in fetching a content  => " + str(e))
     finally:
         return response.returnResponse()

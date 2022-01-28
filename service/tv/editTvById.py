@@ -15,7 +15,7 @@ def editTvById(tvId, requestObj):
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
-        response.setError("Error in fetching a popular tv shows => " + str(e))
+        response.setError("Error in editing tv show by id => Contact Mr. Grey" + str(e))
         # logConfig.logError("Error in fetching a content  => " + str(e))
     finally:
         return response.returnResponse()
