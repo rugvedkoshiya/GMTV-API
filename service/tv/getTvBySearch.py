@@ -1,3 +1,4 @@
+import collections
 import imp
 from models.conn import tvCollections
 from service.JsonResponse import JsonResponse
@@ -6,7 +7,7 @@ from models.config import Config as SETTING
 import re
 
 
-def getTvBySearch(requestObj):
+def getTvBySearch(reqObj):
     response = JsonResponse()
     pageSize = 20
 
@@ -14,14 +15,14 @@ def getTvBySearch(requestObj):
         data = []
         pageBool = False
 
-        queryBool, query = queryChecker(response, requestObj.get("query"))
+        queryBool, query = queryChecker(response, reqObj.get("query"))
         if queryBool:
-            pageBool, page = pageChecker(response, requestObj.get("page"))
+            pageBool, page = pageChecker(response, reqObj.get("page"))
         if pageBool:
-            data = tvCollections.find({"name" : re.compile(query, re.IGNORECASE)}, {"_id" : False}).skip(0 if page == 1 else page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
-            data = list(data)
+            collectionObjs = tvCollections.find({"name" : re.compile(query, re.IGNORECASE)}, {"_id" : False}).skip(0 if page == 1 else page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
+            data = list(collectionObjs)
             response.setStatus(200)
-            response.setMessage("tv data fetched")
+            response.setMessage("TV data fetched")
 
         response.setData(data)
     except Exception as e:

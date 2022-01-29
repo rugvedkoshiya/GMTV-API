@@ -8,7 +8,6 @@ app = Flask(__name__)
 
 @app.before_request
 def before_request():
-    print("before_request")
     g.start_time = time.time()
     g.response = {}
 
@@ -22,7 +21,7 @@ def myconverter(o):
 
 @app.after_request
 def after_request(res):
-    print("after_request")
+    print(time.time() - g.start_time)
     try:
         if (res.get_data()).decode("utf-8") == "null\n":
             res.set_data(json.dumps(g.response, default=myconverter))

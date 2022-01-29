@@ -1,8 +1,8 @@
 from service.getter import getApiKey
-from service.tv.addTvById import addTvById
-from service.tv.deleteTvById import deleteTvById
-from service.tv.editTvById import editTvById
 from service.tv.getTvById import getTvById
+from service.tv.addTvById import addTvById
+from service.tv.editTvById import editTvById
+from service.tv.deleteTvById import deleteTvById
 from service.tv.getTvBySearch import getTvBySearch
 from service.tv.getTvPopular import getTvPopular
 from service.tv.getTvWatchedList import getTvWatchedList
@@ -33,58 +33,69 @@ editTvModel.add_argument("episode", type=int, required=True, help="episode numbe
 getTvWatchedModel = reqparse.RequestParser()
 getTvWatchedModel.add_argument("page", type=int, required=False, help="For pagination", location="args")
 
+
 @tv.route("/popular")
 class TvPopular(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect(getTvPopularModel)
     def get(self):
-        requestObj = validateParameters(request.args, ["page"])
-        output = getTvPopular(requestObj)
+        reqObj = validateParameters(request.args, ["page"])
+        output = getTvPopular(reqObj)
         return jsonify(output)
+
 
 @tv.route("/<int:tvId>")
 class TvById(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect()
     def get(self, tvId):
-        output = getTvById(tvId)
+        apiKey = getApiKey(request)
+        output = getTvById(apiKey, tvId)
         return jsonify(output)
+
 
     @api.doc(responses={200: "OK"})
     @api.expect(addTvModel)
     def post(self, tvId):
-        requestObj = validateParameters(request.json, ["language", "season", "episode"])
+        reqObj = validateParameters(request.json, ["language", "season", "episode"])
         apiKey = getApiKey(request)
-        output = addTvById(apiKey, tvId, requestObj)
+        output = addTvById(apiKey, tvId, reqObj)
         return jsonify(output)
+
 
     @api.doc(responses={200: "OK"})
     @api.expect(editTvModel)
     def put(self, tvId):
-        requestObj = validateParameters(request.json, ["language", "season", "episode"])
-        output = editTvById(tvId, requestObj)
+        reqObj = validateParameters(request.json, ["language", "season", "episode"])
+        apiKey = getApiKey(request)
+        output = editTvById(apiKey, tvId, reqObj)
         return jsonify(output)
+
 
     @api.doc(responses={200: "OK"})
     @api.expect()
     def delete(self, tvId):
-        output = deleteTvById(tvId)
+        apiKey = getApiKey(request)
+        output = deleteTvById(apiKey, tvId)
         return jsonify(output)
+
 
 @tv.route("/search")
 class TvBySearch(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect(getTvBySearchModel)
     def get(self):
-        requestObj = validateParameters(request.args, ["query", "page"])
-        output = getTvBySearch(requestObj)
+        reqObj = validateParameters(request.args, ["query", "page"])
+        output = getTvBySearch(reqObj)
         return jsonify(output)
 
+
 @tv.route("/watched")
-class TvBySearch(Resource):
+class TvWatched(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect(getTvWatchedModel)
     def get(self):
-        requestObj = validateParameters(request.args, ["page"])
-        output = getTvWatchedList(requestObj)
+        reqObj = validateParameters(request.args, ["page"])
+        apiKey = getApiKey(request)
+        output = getTvWatchedList(apiKey, reqObj)
         return jsonify(output)
