@@ -1,3 +1,4 @@
+from service.getter import getApiKey
 from service.movie.addMovieById import addMovieById
 from service.movie.deleteMovieById import deleteMovieById
 from service.movie.editMovieById import editMovieById
@@ -16,18 +17,14 @@ getMoviePopularModel = reqparse.RequestParser()
 getMoviePopularModel.add_argument("page", type=int, required=False, help="For pagination", location="args")
 
 getMovieBySearchModel = reqparse.RequestParser()
-getMovieBySearchModel.add_argument("query", type=str, required=True, help="Query parameter for tv show", location="args")
+getMovieBySearchModel.add_argument("query", type=str, required=True, help="Query parameter for movie", location="args")
 getMovieBySearchModel.add_argument("page", type=int, required=False, help="For pagination", location="args")
 
 addMovieModel = reqparse.RequestParser()
-addMovieModel.add_argument("language", type=str, required=True, help="language in which user has seen tv show", location="json")
-addMovieModel.add_argument("season", type=int, required=True, help="season number where user is on", location="json")
-addMovieModel.add_argument("episode", type=int, required=True, help="episode number of searson where user is on", location="json")
+addMovieModel.add_argument("language", type=str, required=True, help="language in which user has seen the movie", location="json")
 
 editMovieModel = reqparse.RequestParser()
-editMovieModel.add_argument("language", type=str, required=True, help="language in which user has seen tv show", location="json")
-editMovieModel.add_argument("season", type=int, required=True, help="season number where user is on", location="json")
-editMovieModel.add_argument("episode", type=int, required=True, help="episode number of searson where user is on", location="json")
+editMovieModel.add_argument("language", type=str, required=True, help="language in which user has seen the movie", location="json")
 
 getMovieWatchedModel = reqparse.RequestParser()
 getMovieWatchedModel.add_argument("page", type=int, required=False, help="For pagination", location="args")
@@ -53,20 +50,23 @@ class MovieById(Resource):
     @api.expect(addMovieModel)
     def post(self, movieId):
         requestObj = validateParameters(request.json, ["language"])
-        output = addMovieById(movieId, requestObj)
+        apiKey = getApiKey(request)
+        output = addMovieById(apiKey, movieId, requestObj)
         return jsonify(output)
 
     @api.doc(responses={200: "OK"})
     @api.expect(editMovieModel)
     def put(self, movieId):
         requestObj = validateParameters(request.json, ["language"])
-        output = editMovieById(movieId, requestObj)
+        apiKey = getApiKey(request)
+        output = editMovieById(apiKey, movieId, requestObj)
         return jsonify(output)
 
     @api.doc(responses={200: "OK"})
     @api.expect()
     def delete(self, movieId):
-        output = deleteMovieById(movieId)
+        apiKey = getApiKey(request)
+        output = deleteMovieById(apiKey, movieId)
         return jsonify(output)
 
 @movie.route("/search")

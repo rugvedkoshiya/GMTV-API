@@ -6,14 +6,14 @@ from models.config import Config as SETTING
 from service.checkers.tvChecker import getTvObj
 
 
-def getTvById(apiKey, tvId):
+def getTvById(tvId):
     response = JsonResponse()
 
     try:
         data = []
-        userObj = apiChecker(apiKey, response)
-        if userObj:
-            tvObj = getTvObj(response, tvId)
+        # userObj = apiChecker(apiKey, response)
+        # if userObj:
+        tvObj = getTvObj(response, tvId)
         if tvObj:
             data = tvObj
             del data['_id']

@@ -9,7 +9,6 @@ import re
 
 def getTvBySearch(reqObj):
     response = JsonResponse()
-    pageSize = 20
 
     try:
         data = []
@@ -19,7 +18,7 @@ def getTvBySearch(reqObj):
         if queryBool:
             pageBool, page = pageChecker(response, reqObj.get("page"))
         if pageBool:
-            collectionObjs = tvCollections.find({"name" : re.compile(query, re.IGNORECASE)}, {"_id" : False}).skip(0 if page == 1 else page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
+            collectionObjs = tvCollections.find({"name" : re.compile(query, re.IGNORECASE)}, {"_id" : False}).skip(page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
             data = list(collectionObjs)
             response.setStatus(200)
             response.setMessage("TV data fetched")

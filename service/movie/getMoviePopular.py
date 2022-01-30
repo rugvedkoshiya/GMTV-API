@@ -1,17 +1,25 @@
-from models.conn import tvCollections
+from models.conn import movieCollections
 from service.JsonResponse import JsonResponse
 from service.checkers.commonChecker import pageChecker
 from models.config import Config as SETTING
 
 
-def getMoviePopular(requestObj):
+def getMoviePopular(reqObj):
     response = JsonResponse()
 
     try:
         data = []
 
-        response.setStatus(200)
-        response.setMessage("demo api")
+        pageBool, page = pageChecker(response, reqObj.get("page"))
+        if pageBool:
+            movieCollData = movieCollections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
+    
+            # Convert Data into List
+            for movie in movieCollData:
+                data.append(movie)
+
+            response.setStatus(200)
+            response.setMessage("movie data fetched")
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error

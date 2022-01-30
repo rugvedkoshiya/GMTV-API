@@ -6,21 +6,20 @@ from models.config import Config as SETTING
 
 def getTvPopular(reqObj):
     response = JsonResponse()
-    pageSize = 20
 
     try:
         data = []
 
         pageBool, page = pageChecker(response, reqObj.get("page"))
         if pageBool:
-            tvCollData = tvCollections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(0 if page == 1 else page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
+            tvCollData = tvCollections.find({}, {'_id': False}).sort([('popularity', -1)]).skip(page*SETTING.PAGING - SETTING.PAGING).limit(SETTING.PAGING)
     
             # Convert Data into List
             for tvShow in tvCollData:
                 data.append(tvShow)
 
-        response.setStatus(200)
-        response.setMessage("tv data fetched")
+            response.setStatus(200)
+            response.setMessage("tv data fetched")
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error

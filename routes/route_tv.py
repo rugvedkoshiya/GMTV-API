@@ -49,8 +49,7 @@ class TvById(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect()
     def get(self, tvId):
-        apiKey = getApiKey(request)
-        output = getTvById(apiKey, tvId)
+        output = getTvById(tvId)
         return jsonify(output)
 
 
