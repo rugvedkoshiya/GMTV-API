@@ -1,0 +1,7 @@
+# .gitignore
+myenv
+.vscode
+.env
+__pycache__
+models/config.py
+models/testConfig.py
