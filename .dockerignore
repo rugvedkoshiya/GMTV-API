@@ -1,0 +1,4 @@
+myenv/
+.vscode
+__pycache__
+models/testConfig.py

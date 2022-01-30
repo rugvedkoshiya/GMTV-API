@@ -13,4 +13,4 @@ from models.config import Config as SETTING
 
 if __name__ == "__main__":
     os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-    app.run(port=5000, debug=SETTING.DEBUG)
+    app.run(port=5000, debug=False if SETTING.DEBUG == "False" else True)
