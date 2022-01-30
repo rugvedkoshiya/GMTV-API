@@ -25,7 +25,7 @@ def getMovieBySearch(reqObj):
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
-        response.setError("Error in fetching a popular tv shows => " + str(e))
+        response.setError("Error in searching movies Contact Mr. Grey => " + str(e))
         # logConfig.logError("Error in fetching a content  => " + str(e))
     finally:
         return response.returnResponse()

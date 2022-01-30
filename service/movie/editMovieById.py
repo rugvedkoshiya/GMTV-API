@@ -49,7 +49,7 @@ def editMovieById(apiKey, movieId, reqObj):
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
-        response.setError("Error in editing watched list => " + str(e))
+        response.setError("Error in editing watched list Contact Mr. Grey => " + str(e))
         # logConfig.logError("Error in fetching a content  => " + str(e))
     finally:
         return response.returnResponse()
