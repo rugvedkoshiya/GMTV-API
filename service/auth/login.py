@@ -26,6 +26,8 @@ def login(requestObj):
                     "country": userObj.get("country"),
                     "api": userObj.get("api"),
                     "role": roleGenerator(userObj.get("role")),
+                    "emailVerified": userObj.get("emailVerified"),
+                    "emailVerifiedOn": userObj.get("emailVerifiedOn"),
                 }
             else:
                 response.setStatus(403)

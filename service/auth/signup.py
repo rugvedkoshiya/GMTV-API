@@ -43,6 +43,8 @@ def signup(requestObj, ipAddress, environ):
                 "city" : None,
                 "api" : apiKey,
                 "role" : 0,
+                "emailVerified" : False,
+                "emailVerifiedOn" : None
             }
             if SETTING.DEBUG == False:
                 ipResponse = requests.get(f"{SETTING.IP_LOOKUP_WEBSITE}{environ['HTTP_X_FORWARDED_FOR']}").json()

@@ -3,6 +3,7 @@ import os
 import routes.route_auth
 import routes.route_movie
 import routes.route_tv
+import routes.route_user
 from models.config import Config as SETTING
 
 if __name__ == "__main__":

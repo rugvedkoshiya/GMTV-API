@@ -14,7 +14,7 @@ loginModel.add_argument("password", type=str, required=True, help="Password of u
 signupModel = reqparse.RequestParser()
 signupModel.add_argument("email", type=str, required=True, help="Email address", location="json")
 signupModel.add_argument("password", type=str, required=True, help="Password", location="json")
-signupModel.add_argument("username", type=str, required=True, help="Uniq username of user", location="json")
+signupModel.add_argument("username", type=str, required=True, help="Username of user", location="json")
 signupModel.add_argument("displayName", type=str, required=True, help="Display name of user", location="json")
 
 
