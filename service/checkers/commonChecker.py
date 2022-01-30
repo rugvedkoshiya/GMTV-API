@@ -4,7 +4,12 @@ from models.conn import userCollections
 def pageChecker(response, page):
     if page != None:
         if page.isdigit():
-            return True, int(page)
+            if int(page) > 0:
+                return True, int(page)
+            else:
+                response.setStatus(400)
+                response.setError("Page cannot be 0")
+                return False, None
         else:
             response.setStatus(400)
             response.setError("Invalid page number passed")

@@ -13,6 +13,8 @@ def getTvWatchedList(apiKey, reqObj):
 
         userObj = apiChecker(apiKey, response)
         if userObj:
+            pageBool, page = pageChecker(response, reqObj.get("page"))
+        if pageBool:
             watchedTvObj = userDataCollections.aggregate(
                 [
                     {
@@ -26,19 +28,61 @@ def getTvWatchedList(apiKey, reqObj):
                     {
                         "$unwind": '$tv'
                     },
-                    { "$project": {"_id": 0, "userId": 0, "tvId": 0}},
+                    {
+                        "$sort": {
+                            "createdAt": -1 
+                        }
+                    },
+                    {
+                        "$skip": page*SETTING.PAGING - SETTING.PAGING
+                    },
+                    {
+                        "$limit": SETTING.PAGING
+                    },
+                    # {
+                    #     "$facet": {
+                    #         "metadata": [
+                    #             {
+                    #                 "$count": "total"
+                    #             },
+                    #             {
+                    #                 "$addFields": {
+                    #                     "page": 1
+                    #                 }
+                    #             },
+                    #         ],
+                    #         "data": [
+                    #             {
+                    #                 "$skip": 3
+                    #             },
+                    #             {
+                    #                 "$limit": 2
+                    #             },
+                    #             {
+                    #                 "$project": {
+                    #                     "_id": 0,
+                    #                     "userId": 0,
+                    #                     "tvId": 0,
+                    #                     "tv._id": 0
+                    #                 }
+                    #             }
+                    #         ]
+                    #     }
+                    # },
+                    {
+                        "$project": {
+                            "_id": 0,
+                            "userId": 0,
+                            "tvId": 0,
+                            "tv._id": 0
+                        }
+                    },
                 ]
             )
-            print(list(watchedTvObj))
-            # data = list(watchedTvObj)
-            # for row in data:
-            #     del data["_id"]
-            #     del data["userId"]
-            #     del data["tvId"]
-            # data = list(watchedTvObj)
+            data = list(watchedTvObj)
 
-        response.setStatus(200)
-        response.setMessage("demo api")
+            response.setStatus(200)
+            response.setMessage("fetched whatced list")
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error

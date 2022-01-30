@@ -3,11 +3,12 @@ from service.JsonResponse import JsonResponse
 from service.checkers.apiChecker import apiChecker
 from service.checkers.tvChecker import getEpisode, getLanguage, getSeason, getTvObj
 from models.config import Config as SETTING
+from datetime import datetime
 
 
 def addTvById(apiKey, tvId, reqObj):
-# language bool
     response = JsonResponse()
+
     try:
         data = []
         checkBool = False
@@ -24,12 +25,15 @@ def addTvById(apiKey, tvId, reqObj):
         if checkBool:
             userDataTvObj = userDataCollections.find_one({"userId" : userObj.get("_id"), "tvId" : tvObj.get("_id")})
             if not userDataTvObj:
+                currentDatetime = datetime.now()
                 newObj = {
                     "userId": userObj.get("_id"),
                     "tvId": tvObj.get("_id"),
                     "watchedLanguage" : language,
                     "currentSeason" : season,
-                    "currentEpisode" : episode
+                    "currentEpisode" : episode,
+                    "createdAt": currentDatetime,
+                    "modifiedAt": currentDatetime,
                 }
                 userDataCollections.insert_one(newObj)
                 data = newObj

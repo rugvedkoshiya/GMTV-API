@@ -1,3 +1,4 @@
+from datetime import datetime
 from models.conn import tvCollections, userDataCollections
 from service.JsonResponse import JsonResponse
 from service.checkers.apiChecker import apiChecker
@@ -24,12 +25,19 @@ def editTvById(apiKey, tvId, reqObj):
             checkBool, language = getLanguage(response, reqObj.get("language"), tvObj.get("languages"))
         if checkBool:
             editedObj = {}
+            isEdited = False
+            currentDatetime = datetime.now()
             if season:
                 editedObj["currentSeason"] = season
+                isEdited = True
             if episode:
                 editedObj["currentEpisode"] = episode
+                isEdited = True
             if language:
                 editedObj["watchedLanguage"] = language
+                isEdited = True
+            if isEdited:
+                editedObj["modifiedAt"] = currentDatetime
 
             userDataCollections.update_one(
                 {
