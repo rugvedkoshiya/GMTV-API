@@ -23,7 +23,7 @@ jobs:
       name: Build the Docker image
       run: |
         docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:$(date +%s) .
-        docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker
+        docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:$(date +%s)
     -
       name: Deploy on Server
       uses: appleboy/ssh-action@master
