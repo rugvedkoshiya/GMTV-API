@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: env
     steps:
     - 
       name: Checkout
@@ -21,7 +22,6 @@ jobs:
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
     -
       name: Create env file
-      environment: env
       run: |
         touch .env
         echo SECRET_KEY=$SECRET_KEY >> .env
