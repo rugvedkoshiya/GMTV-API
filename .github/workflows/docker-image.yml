@@ -32,4 +32,6 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_KEY }}
         port: ${{ secrets.SERVER_PORT }}
-        script: sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
+        script: |
+          sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
+          sudo docker run -d -p 80:5000 gmtv-docker
