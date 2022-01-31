@@ -34,6 +34,7 @@ jobs:
     -
       name: Build the Docker image
       run: |
+        ls
         docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
         docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
     -
