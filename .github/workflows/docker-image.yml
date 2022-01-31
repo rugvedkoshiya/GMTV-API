@@ -20,9 +20,21 @@ jobs:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
     -
+      name: Create env file
+      run: |
+        touch .env
+        echo SECRET_KEY=${{ env.SECRET_KEY }} >> .env
+        echo MONGO_LINK=${{ env.MONGO_LINK }} >> .env
+        echo MONGO_USERNAME=${{ env.MONGO_USERNAME }} >> .env
+        echo MONGO_PASSWORD=${{ env.MONGO_PASSWORD }} >> .env
+        echo DATABASE_NAME=${{ env.DATABASE_NAME }} >> .env
+        echo SUPER_USER=${{ env.SUPER_USER }} >> .env
+        echo ADMIN_USER=${{ env.ADMIN_USER }} >> .env
+        echo WORKER_USER=${{ env.WORKER_USER }} >> .env
+    -
       name: Build the Docker image
       run: |
-        docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
+        docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
         docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
     -
       name: Deploy on Server
@@ -35,3 +47,7 @@ jobs:
         script: |
           sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
           sudo docker run -d -p 80:5000 ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker
+    -
+      name: Delete env file
+      run: |
+        rm -rf .env
