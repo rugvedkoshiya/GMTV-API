@@ -29,6 +29,8 @@ jobs:
         cat .env
         echo TEST=$TEST >> .env
         cat .env
+        echo TEST=${{ github.repository }} >> .env
+        cat .env
         echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
         echo MONGO_LINK=${{ secrets.MONGO_LINK }} >> .env
         echo MONGO_USERNAME=${{ secrets.MONGO_USERNAME }} >> .env
