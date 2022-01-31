@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
     - 
       name: Checkout
@@ -22,7 +22,7 @@ jobs:
     -
       name: Build the Docker image
       run: |
-        docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
+        docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
         docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
     -
       name: Deploy on Server
