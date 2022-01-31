@@ -24,14 +24,14 @@ jobs:
       run: |
         ls -a
         touch .env
-        echo SECRET_KEY=${{ env.SECRET_KEY }} >> .env
-        echo MONGO_LINK=${{ env.MONGO_LINK }} >> .env
-        echo MONGO_USERNAME=${{ env.MONGO_USERNAME }} >> .env
-        echo MONGO_PASSWORD=${{ env.MONGO_PASSWORD }} >> .env
-        echo DATABASE_NAME=${{ env.DATABASE_NAME }} >> .env
-        echo SUPER_USER=${{ env.SUPER_USER }} >> .env
-        echo ADMIN_USER=${{ env.ADMIN_USER }} >> .env
-        echo WORKER_USER=${{ env.WORKER_USER }} >> .env
+        echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
+        echo MONGO_LINK=${{ secrets.MONGO_LINK }} >> .env
+        echo MONGO_USERNAME=${{ secrets.MONGO_USERNAME }} >> .env
+        echo MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} >> .env
+        echo DATABASE_NAME=${{ secrets.DATABASE_NAME }} >> .env
+        echo SUPER_USER=${{ secrets.SUPER_USER }} >> .env
+        echo ADMIN_USER=${{ secrets.ADMIN_USER }} >> .env
+        echo WORKER_USER=${{ secrets.WORKER_USER }} >> .env
     -
       name: Build the Docker image
       run: |
