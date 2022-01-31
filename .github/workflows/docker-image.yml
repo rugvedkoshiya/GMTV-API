@@ -38,6 +38,10 @@ jobs:
         docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
         docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
     -
+      name: Delete env file
+      run: |
+        rm -rf .env
+    -
       name: Deploy on Server
       uses: appleboy/ssh-action@master
       with:
@@ -48,7 +52,3 @@ jobs:
         script: |
           sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
           sudo docker run -d -p 80:5000 ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker
-    -
-      name: Delete env file
-      run: |
-        rm -rf .env
