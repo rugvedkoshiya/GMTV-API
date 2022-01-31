@@ -22,6 +22,7 @@ jobs:
     -
       name: Create env file
       run: |
+        ls -a
         touch .env
         echo SECRET_KEY=${{ env.SECRET_KEY }} >> .env
         echo MONGO_LINK=${{ env.MONGO_LINK }} >> .env
@@ -34,7 +35,7 @@ jobs:
     -
       name: Build the Docker image
       run: |
-        ls
+        ls -a
         docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
         docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
     -
