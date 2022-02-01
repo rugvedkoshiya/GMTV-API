@@ -1,5 +1,6 @@
 from models.conn import userCollections
-
+from models.config import Config as SETTING
+import requests
 
 def pageChecker(response, page):
     if page != None:
@@ -65,15 +66,15 @@ def usernameCheckerForSignup(response, username):
 def passwordChecker(response, password):
     if password != None:
         if len(password) >= 8:
-            return True, password
+            return password
         else:
             response.setStatus(400)
             response.setError("Password length should be atleast 8 character")
-            return False, None
+            return None
     else:
         response.setStatus(400)
         response.setError("Password does not provided")
-        return False, None
+        return None
 
 
 def displayNameChecker(response, displayName):
@@ -105,16 +106,32 @@ def emailCheckerForLogin(response, email):
         return False, None
 
 
-def usernameCheckerForLogin(response, username):
+def userCheckerForLogin(response, username):
     if username != None:
-        userObj = userCollections.find_one({"username" : username.lower()})
+        userObj = userCollections.find_one({
+            "$or": [
+                {"username" : username.lower()},
+                {"email" : username.lower()},
+            ]
+        })
         if userObj:
-            return True, userObj
+            return userObj
         else:
             response.setStatus(404)
-            response.setError("Username is does not found")
-            return False, None
+            response.setError("User does not exists")
+            return None
     else:
         response.setStatus(400)
-        response.setError("Username does not provided")
-        return False, None
+        response.setError("Username/Email does not provided")
+        return None
+
+
+def ipAddressChecker(userObj, ipAddress):
+    if SETTING.DEBUG == False:
+        ipResponse = requests.get(f"{SETTING.IP_LOOKUP_WEBSITE}{ipAddress}").json()
+        if ipResponse['status'] == "success":
+            userObj["country"] = ipResponse['country']
+            userObj["region"] = ipResponse['regionName']
+            userObj["city"] = ipResponse['city']
+            userObj["lattitude"] = ipResponse['lat']
+            userObj["longitude"] = ipResponse['lon']

@@ -14,8 +14,8 @@ def changePassword(apiKey, reqObj):
 
         userObj = apiChecker(apiKey, response)
         if userObj:
-            passwordBool, password = passwordChecker(response, reqObj.get("newPassword"))
-        if passwordBool:
+            password = passwordChecker(response, reqObj.get("newPassword"))
+        if password:
             if sha256_crypt.verify(reqObj.get("oldPassword"), userObj.get("password")):
                 userCollections.update_one(
                     {
@@ -23,7 +23,7 @@ def changePassword(apiKey, reqObj):
                     },
                     {
                         "$set": {
-                            "password": sha256_crypt.hash(reqObj.get("newPassword")),
+                            "password": sha256_crypt.hash(password),
                         }
                     }
                 )

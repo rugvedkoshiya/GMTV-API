@@ -1,44 +1,87 @@
-from models.conn import userCollections
+from datetime import datetime, timedelta
 from service.JsonResponse import JsonResponse
-from service.checkers.commonChecker import usernameCheckerForLogin, passwordChecker
+from service.checkers.commonChecker import ipAddressChecker, userCheckerForLogin
 from models.config import Config as SETTING
-from passlib.hash import sha256_crypt
+from models.conn import resetPassword
+import secrets
 
-from service.checkers.generater import roleGenerator
-
-
-def forgotPassword(reqObj):
+def forgotPassword(reqObj, ipAddress):
     response = JsonResponse()
 
     try:
         data = []
-        passwordBool = False
 
-        usernameBool, userObj = usernameCheckerForLogin(response, reqObj.get("username"))
-        if usernameBool:
-            passwordBool, password = passwordChecker(response, reqObj.get("password"))
-        if passwordBool:
-            if sha256_crypt.verify(password, userObj.get("password")):
+        userObj = userCheckerForLogin(response, reqObj.get("username"))
+        if userObj:
+            currentDatetime = datetime.now()
+            resetObj = resetPassword.find_one({"userId": userObj.get("_id"), "resetOn": None})
+            if resetObj:
+                if (currentDatetime - timedelta(hours=24)) < resetObj.get("requestedOn"):
+                    newResetObj = {}
+                    ipAddressChecker(newResetObj, ipAddress)
+                    resetPassword.update_one(
+                        {
+                            "_id": resetObj.get("_id")
+                        },
+                        {
+                            "$set": {
+                                "requestedOn": currentDatetime,
+                                **newResetObj
+                            }
+                        }
+                    )
+                    sendEmail(userObj.get("email"), resetObj.get("resetKey"))
+                else:
+                    resetKey = generateResetKey(secrets.token_urlsafe(64))
+                    newResetObj = {}
+                    ipAddressChecker(newResetObj, ipAddress)
+                    resetPassword.update_one(
+                        {
+                            "_id": resetObj.get("_id")
+                        },
+                        {
+                            "$set": {
+                                "requestedOn": currentDatetime,
+                                "resetKey": resetKey,
+                                **newResetObj
+                            }
+                        }
+                    )
+                    sendEmail(userObj.get("email"), resetKey)
+            else:
+                resetKey = generateResetKey(secrets.token_urlsafe(64))
+                newResetObj = {
+                    "userId": userObj.get("_id"),
+                    "requestedOn": currentDatetime,
+                    "resetOn": None,
+                    "resetKey": resetKey
+                }
+                ipAddressChecker(newResetObj, ipAddress)
+                resetPassword.insert_one(newResetObj)
+
+                sendEmail(userObj.get("email"), resetKey)
                 data = {
                     "email": userObj.get("email"),
-                    "username": userObj.get("username"),
                     "displayName": userObj.get("displayName"),
-                    "country": userObj.get("country"),
-                    "api": userObj.get("api"),
-                    "role": roleGenerator(userObj.get("role")),
-                    "emailVerified": userObj.get("emailVerified"),
-                    "emailVerifiedOn": userObj.get("emailVerifiedOn"),
                 }
-            else:
-                response.setStatus(403)
-                response.setError("Wrong password")
+                response.setStatus(200)
+                response.setMessage("Password reset link has been emaild you")
 
-        response.setStatus(200)
-        response.setMessage("logged in successfully")
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
-        response.setError("Error in Login => Contact Mr. Grey" + str(e))
+        response.setError("Error in Login Contact Mr. Grey => " + str(e))
         # logConfig.logError("Error in fetching a content  => " + str(e))
     finally:
         return response.returnResponse()
+
+
+def generateResetKey(resetKey):
+    resetCheck = resetPassword.count_documents({"resetKey" : resetKey})
+    if resetCheck != 0:
+        return generateResetKey(secrets.token_urlsafe(64))
+    else:
+        return resetKey
+
+def sendEmail(email, resetKey):
+    print(resetKey)

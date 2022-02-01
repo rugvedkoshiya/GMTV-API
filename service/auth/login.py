@@ -1,6 +1,6 @@
 from models.conn import userCollections
 from service.JsonResponse import JsonResponse
-from service.checkers.commonChecker import usernameCheckerForLogin, passwordChecker
+from service.checkers.commonChecker import userCheckerForLogin, passwordChecker
 from models.config import Config as SETTING
 from passlib.hash import sha256_crypt
 
@@ -12,12 +12,11 @@ def login(reqObj):
 
     try:
         data = []
-        passwordBool = False
 
-        usernameBool, userObj = usernameCheckerForLogin(response, reqObj.get("username"))
-        if usernameBool:
-            passwordBool, password = passwordChecker(response, reqObj.get("password"))
-        if passwordBool:
+        userObj = userCheckerForLogin(response, reqObj.get("username"))
+        if userObj:
+            password = passwordChecker(response, reqObj.get("password"))
+        if password:
             if sha256_crypt.verify(password, userObj.get("password")):
                 data = {
                     "email": userObj.get("email"),

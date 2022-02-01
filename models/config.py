@@ -13,6 +13,7 @@ class Config():
     MOVIE_COLLECTION_NAME = "Movie"
     USER_COLLECTION_NAME = "Users"
     USER_DATA_COLLECTION_NAME = "UserData"
+    RESET_PASSWORD_COLLECTION_NAME = "ResetPassword"
     IP_LOOKUP_WEBSITE = "http://ip-api.com/json/"
     SUPER_USER = getenv("SUPER_USER")
     ADMIN_USER = getenv("ADMIN_USER")

@@ -3,7 +3,7 @@ from service.JsonResponse import JsonResponse
 from models.config import Config as SETTING
 import secrets
 from passlib.hash import sha256_crypt
-from service.checkers.commonChecker import displayNameChecker, emailCheckerForSignup, passwordChecker, usernameCheckerForSignup
+from service.checkers.commonChecker import displayNameChecker, emailCheckerForSignup, ipAddressChecker, passwordChecker, usernameCheckerForSignup
 import requests
 
 # roles
@@ -18,15 +18,14 @@ def signup(reqObj, ipAddress):
     try:
         data = []
         usernameBool = False
-        passwordBool = False
         displayNameBool = False
 
         emailBool, email = emailCheckerForSignup(response, reqObj.get("email"))
         if emailBool:
             usernameBool, username = usernameCheckerForSignup(response, reqObj.get("username"))
         if usernameBool:
-            passwordBool, password = passwordChecker(response, reqObj.get("password"))
-        if passwordBool:
+            password = passwordChecker(response, reqObj.get("password"))
+        if password:
             displayNameBool, displayName = displayNameChecker(response, reqObj.get("displayName"))
         if displayNameBool:
 
@@ -46,15 +45,7 @@ def signup(reqObj, ipAddress):
                 "emailVerified" : False,
                 "emailVerifiedOn" : None
             }
-            if SETTING.DEBUG == False:
-                ipResponse = requests.get(f"{SETTING.IP_LOOKUP_WEBSITE}{ipAddress}").json()
-                print(ipResponse)
-                if ipResponse['status'] == "success":
-                    userObj["country"] = ipResponse['country']
-                    userObj["region"] = ipResponse['regionName']
-                    userObj["city"] = ipResponse['city']
-                    userObj["lattitude"] = ipResponse['lat']
-                    userObj["longitude"] = ipResponse['lon']
+            ipAddressChecker()
             
             if reqObj.get("role") != None:
                 if reqObj.get("role") == SETTING.WORKER_USER:

@@ -39,36 +39,6 @@ def getTvWatchedList(apiKey, reqObj):
                     {
                         "$limit": SETTING.PAGING
                     },
-                    # {
-                    #     "$facet": {
-                    #         "metadata": [
-                    #             {
-                    #                 "$count": "total"
-                    #             },
-                    #             {
-                    #                 "$addFields": {
-                    #                     "page": 1
-                    #                 }
-                    #             },
-                    #         ],
-                    #         "data": [
-                    #             {
-                    #                 "$skip": 3
-                    #             },
-                    #             {
-                    #                 "$limit": 2
-                    #             },
-                    #             {
-                    #                 "$project": {
-                    #                     "_id": 0,
-                    #                     "userId": 0,
-                    #                     "tvId": 0,
-                    #                     "tv._id": 0
-                    #                 }
-                    #             }
-                    #         ]
-                    #     }
-                    # },
                     {
                         "$project": {
                             "_id": 0,
