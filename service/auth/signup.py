@@ -12,7 +12,7 @@ import requests
 # 2 - admin
 # 3 - superuser
 
-def signup(reqObj, ipAddress, environ):
+def signup(reqObj, ipAddress):
     response = JsonResponse()
 
     try:
@@ -47,9 +47,8 @@ def signup(reqObj, ipAddress, environ):
                 "emailVerifiedOn" : None
             }
             if SETTING.DEBUG == False:
-                ipResponse = requests.get(f"{SETTING.IP_LOOKUP_WEBSITE}{environ['HTTP_X_FORWARDED_FOR']}").json()
+                ipResponse = requests.get(f"{SETTING.IP_LOOKUP_WEBSITE}{ipAddress}").json()
                 if ipResponse['status'] == "success":
-                    userObj["ip"] = environ['HTTP_X_FORWARDED_FOR']
                     userObj["country"] = ipResponse['country']
                     userObj["region"] = ipResponse['regionName']
                     userObj["city"] = ipResponse['city']

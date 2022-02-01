@@ -48,5 +48,5 @@ class AuthForgotPassword(Resource):
     def post(self):
         print(request.remote_addr)
         reqObj = validateParameters(request.json, ["email"])
-        output = forgotPassword(reqObj, request.remote_addr, request.environ)
+        output = forgotPassword(reqObj, request.remote_addr)
         return jsonify(output)
