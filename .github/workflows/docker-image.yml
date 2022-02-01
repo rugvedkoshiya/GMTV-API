@@ -24,6 +24,7 @@ jobs:
       name: Create env file
       run: |
         touch .env
+        echo "DEBUG=False" >> .env
         echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
         echo "MONGO_LINK=${{ secrets.MONGO_LINK }}" >> .env
         echo "MONGO_USERNAME=${{ secrets.MONGO_USERNAME }}" >> .env

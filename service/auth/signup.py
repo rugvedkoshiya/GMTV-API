@@ -12,7 +12,7 @@ import requests
 # 2 - admin
 # 3 - superuser
 
-def signup(requestObj, ipAddress, environ):
+def signup(reqObj, ipAddress, environ):
     response = JsonResponse()
 
     try:
@@ -21,13 +21,13 @@ def signup(requestObj, ipAddress, environ):
         passwordBool = False
         displayNameBool = False
 
-        emailBool, email = emailCheckerForSignup(response, requestObj.get("email"))
+        emailBool, email = emailCheckerForSignup(response, reqObj.get("email"))
         if emailBool:
-            usernameBool, username = usernameCheckerForSignup(response, requestObj.get("username"))
+            usernameBool, username = usernameCheckerForSignup(response, reqObj.get("username"))
         if usernameBool:
-            passwordBool, password = passwordChecker(response, requestObj.get("password"))
+            passwordBool, password = passwordChecker(response, reqObj.get("password"))
         if passwordBool:
-            displayNameBool, displayName = displayNameChecker(response, requestObj.get("displayName"))
+            displayNameBool, displayName = displayNameChecker(response, reqObj.get("displayName"))
         if displayNameBool:
 
             # generate API key
@@ -54,12 +54,12 @@ def signup(requestObj, ipAddress, environ):
                     userObj["region"] = ipResponse['regionName']
                     userObj["city"] = ipResponse['city']
             
-            if requestObj.get("role") != None:
-                if requestObj.get("role") == SETTING.WORKER_USER:
+            if reqObj.get("role") != None:
+                if reqObj.get("role") == SETTING.WORKER_USER:
                     userObj['role'] = 1
-                elif requestObj.get("role") == SETTING.ADMIN_USER:
+                elif reqObj.get("role") == SETTING.ADMIN_USER:
                     userObj['role'] = 2
-                elif requestObj.get("role") == SETTING.SUPER_USER:
+                elif reqObj.get("role") == SETTING.SUPER_USER:
                     userObj['role'] = 3
 
             

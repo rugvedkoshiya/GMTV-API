@@ -7,7 +7,7 @@ from passlib.hash import sha256_crypt
 from service.checkers.generater import roleGenerator
 
 
-def login(reqObj):
+def forgotPassword(reqObj):
     response = JsonResponse()
 
     try:
