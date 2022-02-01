@@ -63,13 +63,7 @@ def signup(reqObj, ipAddress, environ):
                     userObj['role'] = 3
 
             
-            userId = userCollections.insert_one(userObj).inserted_id
-            userDataObj = {
-                "userId" : userId,
-                "tv" : [],
-                "movie" : []
-            }
-            userDataCollections.insert_one(userDataObj)
+            userCollections.insert_one(userObj).inserted_id
             data = {
                 "apiKey": apiKey,
                 "email": email,
@@ -83,7 +77,7 @@ def signup(reqObj, ipAddress, environ):
         response.setData(data)
     except Exception as e:
         response.setStatus(500) # Internal error
-        response.setError("Error in Signup => Contact Mr. Grey" + str(e))
+        response.setError("Error in Signup Contact Mr. Grey => " + str(e))
         # logConfig.logError("Error in fetching a content  => " + str(e))
     finally:
         return response.returnResponse()
