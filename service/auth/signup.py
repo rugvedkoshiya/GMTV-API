@@ -48,10 +48,13 @@ def signup(reqObj, ipAddress):
             }
             if SETTING.DEBUG == False:
                 ipResponse = requests.get(f"{SETTING.IP_LOOKUP_WEBSITE}{ipAddress}").json()
+                print(ipResponse)
                 if ipResponse['status'] == "success":
                     userObj["country"] = ipResponse['country']
                     userObj["region"] = ipResponse['regionName']
                     userObj["city"] = ipResponse['city']
+                    userObj["lattitude"] = ipResponse['lat']
+                    userObj["longitude"] = ipResponse['lon']
             
             if reqObj.get("role") != None:
                 if reqObj.get("role") == SETTING.WORKER_USER:

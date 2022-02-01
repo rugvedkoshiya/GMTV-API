@@ -1,7 +1,8 @@
 from os import getenv
 
 class Config():
-    DEBUG = getenv("DEBUG")
+    DEBUG = False if getenv("DEBUG") == "False" else True
+    PORT = getenv("PORT")
     DOCUMENTATION_LINK = "https://gmtv.stoplight.io/docs/v1/overview.json"
     SECRET_KEY = getenv("SECRET_KEY")
     MONGO_LINK = getenv("MONGO_LINK")
