@@ -38,7 +38,7 @@ class AuthSignup(Resource):
     def post(self):
         print(request.remote_addr)
         reqObj = validateParameters(request.json, ["email", "password", "username", "displayName", "role"])
-        output = signup(reqObj, request.remote_addr, request.environ)
+        output = signup(reqObj, request.remote_addr)
         return jsonify(output)
 
 @auth.route("/forgotPassword")
