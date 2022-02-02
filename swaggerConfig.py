@@ -2,9 +2,21 @@ from flask import Flask, g
 from datetime import datetime
 import time, decimal, json
 from flask_restx import Api
+from flask_mail import Mail
+from models.config import Config as SETTING
 
 
 app = Flask(__name__)
+
+# Mail configuration
+app.config['MAIL_SERVER'] = SETTING.MAIL_SERVER
+app.config['MAIL_PORT'] = SETTING.MAIL_PORT
+app.config['MAIL_USERNAME'] = SETTING.MAIL_USERNAME
+app.config['MAIL_PASSWORD'] = SETTING.MAIL_PASSWORD
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+
+mail = Mail(app)
 
 @app.before_request
 def before_request():

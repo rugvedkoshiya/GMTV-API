@@ -50,7 +50,7 @@ class AuthForgotPassword(Resource):
     @api.expect(forgotPasswordModel)
     def post(self):
         reqObj = validateParameters(request.json, ["username"])
-        output = forgotPassword(reqObj, request.remote_addr)
+        output = forgotPassword(reqObj, request.remote_addr, request.environ)
         return jsonify(output)
 
 @auth.route("/resetPassword/<resetKey>")

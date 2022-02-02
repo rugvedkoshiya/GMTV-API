@@ -10,4 +10,8 @@ DATABASE_NAME=database name
 SUPER_USER=super user
 ADMIN_USER=admin user
 WORKER_USER=worker user
+MAIL_SERVER=mail server
+MAIL_PORT=mail port
+MAIL_USERNAME=mail username
+MAIL_PASSWORD=mail password
 ```
