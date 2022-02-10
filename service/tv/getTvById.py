@@ -1,9 +1,8 @@
-from models.conn import tvCollections
+import json
 from service.JsonResponse import JsonResponse
-from service.checkers.apiChecker import apiChecker
-from service.checkers.commonChecker import pageChecker
-from models.config import Config as SETTING
 from service.checkers.tvChecker import getTvObj
+# from service.redis.redis import getCachedata, setCacheData
+# from service.redis.redisTimeToLive import redisExpire
 
 
 def getTvById(tvId):
@@ -11,14 +10,17 @@ def getTvById(tvId):
 
     try:
         data = []
-        # userObj = apiChecker(apiKey, response)
-        # if userObj:
+        # redisData = getCachedata("tv:{0}".format(tvId))
+        # if redisData:
+            # data = json.loads(redisData.decode("utf-8"))
+        # else:
         tvObj = getTvObj(response, tvId)
         if tvObj:
             data = tvObj
             del data['_id']
             response.setStatus(200)
             response.setMessage("TV data fetched")
+            # setCacheData("tv:{0}".format(tvId), json.dumps(data), redisExpire.Day)
 
         response.setData(data)
     except Exception as e:

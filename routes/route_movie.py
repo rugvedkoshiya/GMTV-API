@@ -11,6 +11,7 @@ from flask_restx import reqparse, Resource
 from flask import jsonify, request
 from service.validators.validationFunctions import validateParameters 
 
+
 movie = api.namespace("movie", description="Movie Apis")
 
 getMoviePopularModel = reqparse.RequestParser()
@@ -30,7 +31,7 @@ getMovieWatchedModel = reqparse.RequestParser()
 getMovieWatchedModel.add_argument("page", type=int, required=False, help="For pagination", location="args")
 
 @movie.route("/popular")
-class TvPopular(Resource):
+class MoviePopular(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect(getMoviePopularModel)
     def get(self):
