@@ -40,7 +40,7 @@ jobs:
     -
       name: Build the Docker image
       run: |
-        docker-compose build
+        docker-compose build --pull
         docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv_api:latest
     -
       name: Delete env file
