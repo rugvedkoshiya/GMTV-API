@@ -40,8 +40,8 @@ jobs:
     -
       name: Build the Docker image
       run: |
-        docker build --file Dockerfile -t ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest .
-        docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
+        docker-compose build
+        docker push docker.io/${{ secrets.DOCKER_HUB_USERNAME }}/gmtv_api:latest
     -
       name: Delete env file
       run: |
@@ -55,8 +55,9 @@ jobs:
         key: ${{ secrets.SERVER_KEY }}
         port: ${{ secrets.SERVER_PORT }}
         script: |
+          sudo rm -rf docker-compose.yml
+          wget -q ${{ secrets.DOCKER_COMPOSE }}
           sudo docker kill $(sudo docker ps -q)
           sudo docker rm $(sudo docker ps -a -q)
           sudo docker rmi $(sudo docker images -q)
-          sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker:latest
-          sudo docker run -d -p 80:5000 ${{ secrets.DOCKER_HUB_USERNAME }}/gmtv-docker
+          sudo docker-compose up -d --build
