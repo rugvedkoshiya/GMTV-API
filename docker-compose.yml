@@ -1,0 +1,18 @@
+version: '3'
+services:
+  gmtv-api:
+    container_name: gmtv-flask
+    depends_on:
+      - redis
+    build: .
+    entrypoint: python -m flask run --host=0.0.0.0 --port=5000
+    env_file:
+      - .env
+    ports:
+      - '5000:5000'
+
+  redis:
+    image: redis
+    container_name: gmtv-redis
+    ports:
+      - '6379:6379'
