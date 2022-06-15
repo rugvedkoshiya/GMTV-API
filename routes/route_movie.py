@@ -80,7 +80,7 @@ class MovieBySearch(Resource):
         return jsonify(output)
 
 @movie.route("/watched")
-class MovieBySearch(Resource):
+class MovieWatched(Resource):
     @api.doc(responses={200: "OK"})
     @api.expect(getMovieWatchedModel)
     def get(self):
